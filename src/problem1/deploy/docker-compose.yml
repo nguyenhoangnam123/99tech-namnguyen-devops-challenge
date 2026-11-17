@@ -248,9 +248,12 @@ services:
     profiles: [obs]
     command: [-config.file=/etc/tempo.yaml]
     volumes: [./lgtm/tempo.yaml:/etc/tempo.yaml:ro, tempodata:/var/tempo]
+    # Go collects garbage late by default; compaction after a 100% sampled
+    # run was OOM killed at the limit. Collect before reaching it.
+    environment: { GOMEMLIMIT: 800MiB }
     deploy:
       resources:
-        limits: { cpus: '0.5', memory: 384m }
+        limits: { cpus: '1.0', memory: 1g }
 
   mimir:
     image: grafana/mimir:3.2.2
