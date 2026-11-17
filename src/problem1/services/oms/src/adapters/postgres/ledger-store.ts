@@ -10,6 +10,8 @@ import {
 import { pgConstraint, sql, type Transaction } from '@exchange/platform';
 import type { LedgerStore } from '../../app/ports.js';
 
+const EXCHANGE_OWNER = '00000000-0000-0000-0000-000000000000';
+
 interface AccountRow {
   id: string;
   owner_id: string | null;
@@ -76,6 +78,7 @@ export class PgLedgerStore implements LedgerStore {
   }
 
   // Row locks in id order keep concurrent journals deadlock free.
+  // The coalesce join matches the accounts_lookup index; NULL owner = exchange.
   private async lockAccounts(refs: readonly AccountRef[]): Promise<Map<string, string>> {
     const { rows } = await sql<AccountRow>`
       select a.id, a.owner_id, a.asset, a.kind
@@ -85,7 +88,8 @@ export class PgLedgerStore implements LedgerStore {
         ${refs.map((ref) => ref.asset)}::text[],
         ${refs.map((ref) => ref.kind)}::text[]
       ) as r(owner_id, asset, kind)
-        on a.owner_id is not distinct from r.owner_id and a.asset = r.asset and a.kind = r.kind
+        on coalesce(a.owner_id, ${EXCHANGE_OWNER}::uuid) = coalesce(r.owner_id, ${EXCHANGE_OWNER}::uuid)
+        and a.asset = r.asset and a.kind = r.kind
       order by a.id
       for update of a`.execute(this.trx);
     return new Map(rows.map((row) => [accountKey(row.owner_id, row.asset, row.kind), row.id]));

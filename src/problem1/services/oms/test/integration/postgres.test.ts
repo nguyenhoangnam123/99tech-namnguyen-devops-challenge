@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import type { DB } from '@exchange/contracts';
 import { type Asset, type MatcherEvent, parseAmount } from '@exchange/core';
 import { type Database, createDatabase, createLogger, sql } from '@exchange/platform';
@@ -11,11 +11,14 @@ import { DepositService } from '../../src/app/deposits.js';
 import { OrderService } from '../../src/app/orders.js';
 import { SettlementService } from '../../src/app/settlement.js';
 
-// Use cases and adapters against a real Postgres with the real migration.
-const migration = readFileSync(
-  new URL('../../../../contracts/db/migrations/20261117000001_init.sql', import.meta.url),
-  'utf8',
-).split('-- migrate:down')[0]!;
+// Use cases and adapters against a real Postgres with every migration applied.
+const migrationsDir = new URL('../../../../contracts/db/migrations/', import.meta.url);
+const migrations = readdirSync(migrationsDir)
+  .filter((file) => file.endsWith('.sql'))
+  .sort()
+  .map(
+    (file) => readFileSync(new URL(file, migrationsDir), 'utf8').split('-- migrate:down')[0] ?? '',
+  );
 
 const clock = { now: () => new Date() };
 const ids = { uuid: () => randomUUID() };
@@ -33,7 +36,7 @@ beforeAll(async () => {
     { url: container.getConnectionUri(), poolSize: 20, applicationName: 'integration' },
     createLogger('integration', 'silent'),
   );
-  await sql.raw(migration).execute(database.db);
+  for (const migration of migrations) await sql.raw(migration).execute(database.db);
   uow = new PgUnitOfWork(database.db);
   const read = new PgReadModel(database.db);
   orders = new OrderService({ uow, read, ids, clock });
@@ -179,13 +182,14 @@ describe('ledger guarantees in the schema', () => {
     await expect(insertOneSided).rejects.toThrow(/not balanced/);
   });
 
-  it('refuses to edit or delete journal entries', async () => {
-    await expect(sql`update journal_entries set amount = 0`.execute(database.db)).rejects.toThrow(
-      /append-only/,
-    );
-    await expect(sql`delete from journal_entries`.execute(database.db)).rejects.toThrow(
-      /append-only/,
-    );
+  it('refuses to edit, delete or truncate journal entries', async () => {
+    for (const statement of [
+      'update journal_entries set amount = 0',
+      'delete from journal_entries',
+      'truncate journal_entries',
+    ]) {
+      await expect(sql.raw(statement).execute(database.db)).rejects.toThrow(/append-only/);
+    }
   });
 
   it('credits a deposit once under 10 concurrent deliveries', async () => {
