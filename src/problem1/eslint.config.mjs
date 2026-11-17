@@ -69,7 +69,9 @@ export default defineConfig(
   {
     files: ['**/*.mjs', '**/*.cjs', 'vitest.config.ts'],
     extends: [tseslint.configs.disableTypeChecked],
-    languageOptions: { globals: { process: 'readonly', console: 'readonly', module: 'writable' } },
+    languageOptions: {
+      globals: { process: 'readonly', console: 'readonly', fetch: 'readonly', module: 'writable' },
+    },
   },
   prettier,
 );

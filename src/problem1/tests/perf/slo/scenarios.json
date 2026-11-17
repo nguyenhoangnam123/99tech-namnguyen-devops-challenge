@@ -1,0 +1,85 @@
+{
+  "$comment": "SLO catalog. Each scenario: load model, window, size, and the SLO the run is judged by. Latency is measured at the edge, per request.",
+  "scenarios": [
+    {
+      "id": "market-browse",
+      "title": "Public market data",
+      "window": "2m",
+      "traders": 10,
+      "load": {
+        "model": "arrival",
+        "rates": { "readDepth": 150, "readTicker": 75, "readTrades": 75 }
+      },
+      "size": { "depthLevels": 20, "bookLevels": 200 },
+      "slo": { "p95Ms": 10, "p99Ms": 30, "errorRate": 0.001 }
+    },
+    {
+      "id": "deep-book",
+      "title": "Large depth snapshots",
+      "window": "2m",
+      "traders": 40,
+      "load": { "model": "arrival", "rates": { "readDepth": 200 } },
+      "size": { "depthLevels": 100, "bookLevels": 1000 },
+      "slo": { "p95Ms": 15, "p99Ms": 40, "errorRate": 0.001 }
+    },
+    {
+      "id": "account-reads",
+      "title": "Balances, open orders, fills",
+      "window": "2m",
+      "traders": 40,
+      "load": {
+        "model": "arrival",
+        "rates": { "readBalances": 75, "readOpenOrders": 50, "readFills": 25 }
+      },
+      "size": { "depthLevels": 20, "bookLevels": 200 },
+      "slo": { "p95Ms": 15, "p99Ms": 40, "errorRate": 0.001 }
+    },
+    {
+      "id": "order-entry",
+      "title": "Place and cancel",
+      "window": "2m",
+      "traders": 40,
+      "load": { "model": "arrival", "rates": { "placeOrder": 150, "cancelOne": 25 } },
+      "size": { "depthLevels": 20, "bookLevels": 200 },
+      "slo": { "p95Ms": 25, "p99Ms": 75, "errorRate": 0.001 }
+    },
+    {
+      "id": "peak-mix",
+      "title": "P1 target: 500 rps mixed",
+      "window": "2m",
+      "traders": 40,
+      "load": {
+        "model": "arrival",
+        "rates": {
+          "readDepth": 125,
+          "readTicker": 50,
+          "readTrades": 50,
+          "readBalances": 50,
+          "readOpenOrders": 50,
+          "placeOrder": 125,
+          "cancelOne": 25
+        }
+      },
+      "size": { "depthLevels": 20, "bookLevels": 200 },
+      "slo": { "p95Ms": 25, "p99Ms": 100, "errorRate": 0.001 }
+    },
+    {
+      "id": "traders-50",
+      "title": "50 concurrent traders",
+      "window": "1m",
+      "traders": 50,
+      "load": { "model": "concurrent", "vus": 50, "thinkMs": 100, "action": "placeOrder" },
+      "size": { "depthLevels": 20, "bookLevels": 200 },
+      "slo": { "p95Ms": 30, "p99Ms": 100, "errorRate": 0.001 }
+    },
+    {
+      "id": "traders-200",
+      "title": "200 concurrent traders",
+      "window": "1m",
+      "traders": 100,
+      "load": { "model": "concurrent", "vus": 200, "thinkMs": 250, "action": "placeOrder" },
+      "size": { "depthLevels": 20, "bookLevels": 200 },
+      "slo": { "p95Ms": 60, "p99Ms": 150, "errorRate": 0.001 }
+    }
+  ]
+}

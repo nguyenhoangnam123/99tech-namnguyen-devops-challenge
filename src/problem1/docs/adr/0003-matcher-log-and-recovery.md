@@ -26,8 +26,11 @@
 
 ## Consequences
 
-- Recovery time grows with the log. Wave 2 adds periodic book snapshots so replay starts
-  from the latest snapshot. Locally, `retention.ms=-1` keeps the full log.
+- Recovery time and memory grow with the log. Wave 2 adds periodic book snapshots so replay
+  starts from the latest snapshot. Locally, `retention.ms=-1` keeps the full log.
+- Measured: after repeated load runs, 409k commands rebuilt a 295k-order book. Replay peaked
+  near the 512 MiB limit, so restarts of the matcher and marketdata were OOM killed 5 and 9
+  times before one fit. `make slo` now starts from empty state; snapshots are the real fix.
 - A hot standby would replay continuously and take over on fencing; today a restart is a
   cold replay (seconds at this volume).
 
