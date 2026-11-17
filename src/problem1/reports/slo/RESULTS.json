@@ -1,0 +1,995 @@
+{
+  "commit": "d020274",
+  "telemetry": "on, 0.1 sampled",
+  "generatedAt": "2026-11-17T17:04:00.068Z",
+  "scenarios": [
+    {
+      "id": "market-browse",
+      "window": "2m",
+      "offered": "300 actions/s",
+      "slo": {
+        "p95Ms": 10,
+        "p99Ms": 30,
+        "errorRate": 0.001
+      },
+      "verdict": "met",
+      "latency": {
+        "p95": 2.801470199999999,
+        "p99": 12.495180319999996,
+        "errorRate": 0,
+        "dropped": 0,
+        "requestRate": 300.025
+      },
+      "resources": {
+        "edge": {
+          "cpuAvg": 5.1207999721809285,
+          "cpuMax": 5.754424557544246,
+          "memAvg": 25694378.666666668,
+          "memMax": 26234880
+        },
+        "oms-api": {
+          "cpuAvg": 5.559905762894575,
+          "cpuMax": 8.10906,
+          "memAvg": 348529664,
+          "memMax": 372092928
+        },
+        "oms-relay": {
+          "cpuAvg": 5.47538881499448,
+          "cpuMax": 8.166606678664268,
+          "memAvg": 101164885.33333333,
+          "memMax": 114581504
+        },
+        "matcher": {
+          "cpuAvg": 3.0155282580914378,
+          "cpuMax": 4.0135633788770315,
+          "memAvg": 98959360,
+          "memMax": 99713024
+        },
+        "oms-settler": {
+          "cpuAvg": 3.1145006911300626,
+          "cpuMax": 4.771504089367644,
+          "memAvg": 104332970.66666667,
+          "memMax": 114270208
+        },
+        "marketdata": {
+          "cpuAvg": 29.261641846838625,
+          "cpuMax": 34.83788,
+          "memAvg": 118311082.66666667,
+          "memMax": 130052096
+        },
+        "postgres": {
+          "cpuAvg": 2.0945239896026218,
+          "cpuMax": 2.5629225845169032,
+          "memAvg": 56531968,
+          "memMax": 58880000
+        },
+        "kafka": {
+          "cpuAvg": 35.32396352224222,
+          "cpuMax": 49.18751249750051,
+          "memAvg": 596393130.6666666,
+          "memMax": 691847168
+        },
+        "redis": {
+          "cpuAvg": 0.6725425762199099,
+          "cpuMax": 0.7801117095551566,
+          "memAvg": 11983872,
+          "memMax": 12144640
+        },
+        "otel-collector": {
+          "cpuAvg": 1.4342191968981735,
+          "cpuMax": 1.799770596449232,
+          "memAvg": 88533504,
+          "memMax": 137297920
+        },
+        "tempo": {
+          "cpuAvg": 1.519216023785306,
+          "cpuMax": 2.637126287371263,
+          "memAvg": 188921514.66666666,
+          "memMax": 208297984
+        },
+        "loki": {
+          "cpuAvg": 0.7715124012205617,
+          "cpuMax": 1.1083408340834082,
+          "memAvg": 75398144,
+          "memMax": 87244800
+        },
+        "mimir": {
+          "cpuAvg": 1.0655634666040736,
+          "cpuMax": 1.6621075784843031,
+          "memAvg": 166800725.33333334,
+          "memMax": 167448576
+        },
+        "grafana": {
+          "cpuAvg": 4.091829886376479,
+          "cpuMax": 18.06755,
+          "memAvg": 565393066.6666666,
+          "memMax": 586293248
+        },
+        "k6": {
+          "cpuAvg": 17.515027514800614,
+          "cpuMax": 21.396170382961703,
+          "memAvg": 145897984,
+          "memMax": 152485888
+        }
+      },
+      "span": {
+        "from": 1794933935317,
+        "to": 1794934055317
+      },
+      "agent": {
+        "spans": {
+          "accepted": 7316.984117324896,
+          "lost": 0
+        },
+        "metric_points": {
+          "accepted": 34803.14002312421,
+          "lost": 0
+        },
+        "log_records": {
+          "accepted": 0,
+          "lost": 0
+        }
+      },
+      "pipeline": {
+        "outboxBacklogMax": 0
+      },
+      "host": {
+        "cpu": 0.048054715685337014,
+        "memory": 0.0003405255974476412,
+        "memoryFull": 0.00031747963592423966,
+        "io": 0.0016527023150281156,
+        "ioFull": 0.0013051177508670933,
+        "swapInPerSecond": 4.303187836322382,
+        "minAvailableBytes": 2540638208
+      }
+    },
+    {
+      "id": "deep-book",
+      "window": "2m",
+      "offered": "200 actions/s",
+      "slo": {
+        "p95Ms": 15,
+        "p99Ms": 40,
+        "errorRate": 0.001
+      },
+      "verdict": "met",
+      "latency": {
+        "p95": 4.435,
+        "p99": 27.058917,
+        "errorRate": 0,
+        "dropped": 0,
+        "requestRate": 200.00833333333333
+      },
+      "resources": {
+        "edge": {
+          "cpuAvg": 4.15412862385002,
+          "cpuMax": 4.95005499450055,
+          "memAvg": 25486165.333333332,
+          "memMax": 25985024
+        },
+        "oms-api": {
+          "cpuAvg": 5.391076676927359,
+          "cpuMax": 9.3752849430114,
+          "memAvg": 384817834.6666667,
+          "memMax": 386211840
+        },
+        "oms-relay": {
+          "cpuAvg": 5.318669240534947,
+          "cpuMax": 7.156134386561343,
+          "memAvg": 105787221.33333333,
+          "memMax": 118820864
+        },
+        "matcher": {
+          "cpuAvg": 3.159615484948088,
+          "cpuMax": 3.819671967196719,
+          "memAvg": 104614912,
+          "memMax": 117264384
+        },
+        "oms-settler": {
+          "cpuAvg": 3.4135084607224218,
+          "cpuMax": 5.078122187781221,
+          "memAvg": 107965440,
+          "memMax": 120840192
+        },
+        "marketdata": {
+          "cpuAvg": 34.940413210205044,
+          "cpuMax": 39.6542,
+          "memAvg": 117729962.66666667,
+          "memMax": 124882944
+        },
+        "postgres": {
+          "cpuAvg": 2.3373776108241597,
+          "cpuMax": 2.7283228322832285,
+          "memAvg": 61153792,
+          "memMax": 68812800
+        },
+        "kafka": {
+          "cpuAvg": 33.72614824090016,
+          "cpuMax": 47.98350164983501,
+          "memAvg": 650615296,
+          "memMax": 727314432
+        },
+        "redis": {
+          "cpuAvg": 0.7301620841376673,
+          "cpuMax": 0.8966196619661966,
+          "memAvg": 12233898.666666666,
+          "memMax": 12472320
+        },
+        "otel-collector": {
+          "cpuAvg": 1.6215431035981982,
+          "cpuMax": 2.76703,
+          "memAvg": 90850816,
+          "memMax": 92131328
+        },
+        "tempo": {
+          "cpuAvg": 1.6761682405523382,
+          "cpuMax": 4.113161316131612,
+          "memAvg": 191959722.66666666,
+          "memMax": 219951104
+        },
+        "loki": {
+          "cpuAvg": 0.711952835602859,
+          "cpuMax": 1.12805,
+          "memAvg": 65142272,
+          "memMax": 68104192
+        },
+        "mimir": {
+          "cpuAvg": 1.2338828889932347,
+          "cpuMax": 2.7032893421315736,
+          "memAvg": 205217280,
+          "memMax": 208093184
+        },
+        "grafana": {
+          "cpuAvg": 1.6398880019477922,
+          "cpuMax": 4.162536253625363,
+          "memAvg": 579372885.3333334,
+          "memMax": 596205568
+        },
+        "k6": {
+          "cpuAvg": 14.000568685761989,
+          "cpuMax": 16.69948,
+          "memAvg": 257881770.66666666,
+          "memMax": 262053888
+        }
+      },
+      "span": {
+        "from": 1794934118731,
+        "to": 1794934238731
+      },
+      "agent": {
+        "spans": {
+          "accepted": 4920.957896384411,
+          "lost": 0
+        },
+        "metric_points": {
+          "accepted": 34065.84233317681,
+          "lost": 0
+        },
+        "log_records": {
+          "accepted": 0,
+          "lost": 0
+        }
+      },
+      "pipeline": {
+        "outboxBacklogMax": 0
+      },
+      "host": {
+        "cpu": 0.052187205439905134,
+        "memory": 0.00032378567329265426,
+        "memoryFull": 0.00032222917862298727,
+        "io": 0.0010398688718456694,
+        "ioFull": 0.0008116032764648255,
+        "swapInPerSecond": 2.712996295716596,
+        "minAvailableBytes": 2462662656
+      }
+    },
+    {
+      "id": "account-reads",
+      "window": "2m",
+      "offered": "150 actions/s",
+      "slo": {
+        "p95Ms": 15,
+        "p99Ms": 40,
+        "errorRate": 0.001
+      },
+      "verdict": "met",
+      "latency": {
+        "p95": 7.651125,
+        "p99": 22.029666,
+        "errorRate": 0,
+        "dropped": 0,
+        "requestRate": 150.00833333333333
+      },
+      "resources": {
+        "edge": {
+          "cpuAvg": 3.257653779934262,
+          "cpuMax": 3.7019796040791846,
+          "memAvg": 25305941.333333332,
+          "memMax": 25772032
+        },
+        "oms-api": {
+          "cpuAvg": 42.05884854176448,
+          "cpuMax": 50.682633473305344,
+          "memAvg": 435525461.3333333,
+          "memMax": 437522432
+        },
+        "oms-relay": {
+          "cpuAvg": 5.310013738891497,
+          "cpuMax": 7.115636872625474,
+          "memAvg": 105105578.66666667,
+          "memMax": 105426944
+        },
+        "matcher": {
+          "cpuAvg": 3.3727856906836404,
+          "cpuMax": 4.769526094781044,
+          "memAvg": 104144384,
+          "memMax": 104161280
+        },
+        "oms-settler": {
+          "cpuAvg": 3.3378941235804596,
+          "cpuMax": 4.34784,
+          "memAvg": 107026944,
+          "memMax": 107565056
+        },
+        "marketdata": {
+          "cpuAvg": 3.471560494600094,
+          "cpuMax": 4.847250549890022,
+          "memAvg": 103984298.66666667,
+          "memMax": 104714240
+        },
+        "postgres": {
+          "cpuAvg": 6.239371489191493,
+          "cpuMax": 7.252410482096419,
+          "memAvg": 78605141.33333333,
+          "memMax": 84512768
+        },
+        "kafka": {
+          "cpuAvg": 32.699858263334555,
+          "cpuMax": 45.900450090018005,
+          "memAvg": 668905642.6666666,
+          "memMax": 747307008
+        },
+        "redis": {
+          "cpuAvg": 0.7179257752039094,
+          "cpuMax": 0.9694730526947305,
+          "memAvg": 10973866.666666666,
+          "memMax": 12476416
+        },
+        "otel-collector": {
+          "cpuAvg": 1.7050659988521941,
+          "cpuMax": 2.6623762376237625,
+          "memAvg": 112620885.33333333,
+          "memMax": 120004608
+        },
+        "tempo": {
+          "cpuAvg": 10.763099772177876,
+          "cpuMax": 82.60839167833566,
+          "memAvg": 777975296,
+          "memMax": 904867840
+        },
+        "loki": {
+          "cpuAvg": 0.6454687744560963,
+          "cpuMax": 1.1804219578042197,
+          "memAvg": 72957781.33333333,
+          "memMax": 76185600
+        },
+        "mimir": {
+          "cpuAvg": 1.2942505347733082,
+          "cpuMax": 2.27002599480104,
+          "memAvg": 189442048,
+          "memMax": 198873088
+        },
+        "grafana": {
+          "cpuAvg": 1.573839585398515,
+          "cpuMax": 5.3646170765846835,
+          "memAvg": 393941333.3333333,
+          "memMax": 526462976
+        },
+        "k6": {
+          "cpuAvg": 10.440802768647503,
+          "cpuMax": 11.732123575284943,
+          "memAvg": 271671125.3333333,
+          "memMax": 347049984
+        }
+      },
+      "span": {
+        "from": 1794934292916,
+        "to": 1794934412916
+      },
+      "agent": {
+        "spans": {
+          "accepted": 7499.543474291082,
+          "lost": 0
+        },
+        "metric_points": {
+          "accepted": 34899.43390812095,
+          "lost": 0
+        },
+        "log_records": {
+          "accepted": 0,
+          "lost": 0
+        }
+      },
+      "pipeline": {
+        "outboxBacklogMax": 0
+      },
+      "host": {
+        "cpu": 0.05854639605561738,
+        "memory": 0.0007548587379020649,
+        "memoryFull": 0.0006807363542291675,
+        "io": 0.002317663631857717,
+        "ioFull": 0.0017835198566944778,
+        "swapInPerSecond": 3.8609031382881596,
+        "minAvailableBytes": 1822498816
+      }
+    },
+    {
+      "id": "order-entry",
+      "window": "2m",
+      "offered": "175 actions/s",
+      "slo": {
+        "p95Ms": 25,
+        "p99Ms": 75,
+        "errorRate": 0.001
+      },
+      "verdict": "met",
+      "latency": {
+        "p95": 13.250385249999997,
+        "p99": 42.62610449999991,
+        "errorRate": 0,
+        "dropped": 0,
+        "requestRate": 199.8
+      },
+      "resources": {
+        "edge": {
+          "cpuAvg": 3.5115711031112506,
+          "cpuMax": 3.906369363063694,
+          "memAvg": 25354752,
+          "memMax": 25858048
+        },
+        "oms-api": {
+          "cpuAvg": 65.1201770403993,
+          "cpuMax": 70.52778,
+          "memAvg": 431600298.6666667,
+          "memMax": 458452992
+        },
+        "oms-relay": {
+          "cpuAvg": 9.168728369941393,
+          "cpuMax": 10.302779722027797,
+          "memAvg": 107393194.66666667,
+          "memMax": 108101632
+        },
+        "matcher": {
+          "cpuAvg": 16.22576650840855,
+          "cpuMax": 17.2226,
+          "memAvg": 110756522.66666667,
+          "memMax": 126169088
+        },
+        "oms-settler": {
+          "cpuAvg": 26.549906958139857,
+          "cpuMax": 29.217121712171213,
+          "memAvg": 111225002.66666667,
+          "memMax": 118296576
+        },
+        "marketdata": {
+          "cpuAvg": 7.150549555659902,
+          "cpuMax": 8.62421,
+          "memAvg": 110380032,
+          "memMax": 123084800
+        },
+        "postgres": {
+          "cpuAvg": 45.682546390497556,
+          "cpuMax": 50.10510948905109,
+          "memAvg": 145420800,
+          "memMax": 184840192
+        },
+        "kafka": {
+          "cpuAvg": 60.06713796281804,
+          "cpuMax": 75.16759,
+          "memAvg": 667532117.3333334,
+          "memMax": 763424768
+        },
+        "redis": {
+          "cpuAvg": 1.8057451174762178,
+          "cpuMax": 1.98453,
+          "memAvg": 10846208,
+          "memMax": 10846208
+        },
+        "otel-collector": {
+          "cpuAvg": 1.5441861880662946,
+          "cpuMax": 1.96721,
+          "memAvg": 122821290.66666667,
+          "memMax": 124121088
+        },
+        "tempo": {
+          "cpuAvg": 2.8239091494060973,
+          "cpuMax": 4.658674132586741,
+          "memAvg": 242482005.33333334,
+          "memMax": 517492736
+        },
+        "loki": {
+          "cpuAvg": 0.6157510304168624,
+          "cpuMax": 1.243134313431343,
+          "memAvg": 80986965.33333333,
+          "memMax": 83173376
+        },
+        "mimir": {
+          "cpuAvg": 1.110418079685571,
+          "cpuMax": 2.13982,
+          "memAvg": 194203989.33333334,
+          "memMax": 197287936
+        },
+        "grafana": {
+          "cpuAvg": 1.3850359124189144,
+          "cpuMax": 4.19269,
+          "memAvg": 348547584,
+          "memMax": 348868608
+        },
+        "k6": {
+          "cpuAvg": 12.445621815272778,
+          "cpuMax": 13.745495450454953,
+          "memAvg": 253478400,
+          "memMax": 298885120
+        }
+      },
+      "span": {
+        "from": 1794934466983,
+        "to": 1794934586983
+      },
+      "agent": {
+        "spans": {
+          "accepted": 42851.47826086956,
+          "lost": 0
+        },
+        "metric_points": {
+          "accepted": 35029.565217391304,
+          "lost": 0
+        },
+        "log_records": {
+          "accepted": 0,
+          "lost": 0
+        }
+      },
+      "pipeline": {
+        "toMatcherP99": 0.08460916179337254,
+        "toSettledP99": 0.09288104325699756,
+        "outboxBacklogMax": 6
+      },
+      "host": {
+        "cpu": 0.0899132869565224,
+        "memory": 0.0000176347826087046,
+        "memoryFull": 0.000009878260869555788,
+        "io": 0.011038147826087034,
+        "ioFull": 0.008499878260869679,
+        "swapInPerSecond": 2.8,
+        "minAvailableBytes": 2116468736
+      }
+    },
+    {
+      "id": "peak-mix",
+      "window": "2m",
+      "offered": "475 actions/s",
+      "slo": {
+        "p95Ms": 25,
+        "p99Ms": 100,
+        "errorRate": 0.001
+      },
+      "verdict": "met",
+      "latency": {
+        "p95": 12.587279449999992,
+        "p99": 51.27328059,
+        "errorRate": 0,
+        "dropped": 0,
+        "requestRate": 499.7
+      },
+      "resources": {
+        "edge": {
+          "cpuAvg": 8.71680941904853,
+          "cpuMax": 9.647845215478451,
+          "memAvg": 26399914.666666668,
+          "memMax": 26976256
+        },
+        "oms-api": {
+          "cpuAvg": 76.99910522517197,
+          "cpuMax": 86.60841,
+          "memAvg": 448785066.6666667,
+          "memMax": 471928832
+        },
+        "oms-relay": {
+          "cpuAvg": 8.853431709289485,
+          "cpuMax": 9.83091,
+          "memAvg": 108443136,
+          "memMax": 121167872
+        },
+        "matcher": {
+          "cpuAvg": 15.264073355883864,
+          "cpuMax": 17.16237,
+          "memAvg": 116445354.66666667,
+          "memMax": 123740160
+        },
+        "oms-settler": {
+          "cpuAvg": 24.090642690063568,
+          "cpuMax": 26.34047,
+          "memAvg": 113142784,
+          "memMax": 115359744
+        },
+        "marketdata": {
+          "cpuAvg": 32.75540125738037,
+          "cpuMax": 36.84796,
+          "memAvg": 118411434.66666667,
+          "memMax": 131584000
+        },
+        "postgres": {
+          "cpuAvg": 45.842206589507924,
+          "cpuMax": 52.99892,
+          "memAvg": 210238976,
+          "memMax": 258150400
+        },
+        "kafka": {
+          "cpuAvg": 54.90507039069226,
+          "cpuMax": 67.23573642635736,
+          "memAvg": 674005333.3333334,
+          "memMax": 763674624
+        },
+        "redis": {
+          "cpuAvg": 1.7731715376388033,
+          "cpuMax": 1.93433,
+          "memAvg": 10681344,
+          "memMax": 11735040
+        },
+        "otel-collector": {
+          "cpuAvg": 1.8316032034504048,
+          "cpuMax": 2.109200920092009,
+          "memAvg": 128562176,
+          "memMax": 137392128
+        },
+        "tempo": {
+          "cpuAvg": 3.204508656446466,
+          "cpuMax": 6.88894,
+          "memAvg": 205340501.33333334,
+          "memMax": 233021440
+        },
+        "loki": {
+          "cpuAvg": 0.605505169520265,
+          "cpuMax": 1.200890089008901,
+          "memAvg": 81386837.33333333,
+          "memMax": 86134784
+        },
+        "mimir": {
+          "cpuAvg": 1.2778497578281929,
+          "cpuMax": 2.40624,
+          "memAvg": 206096725.33333334,
+          "memMax": 219156480
+        },
+        "grafana": {
+          "cpuAvg": 1.3770915035521432,
+          "cpuMax": 4.319698030196981,
+          "memAvg": 348473685.3333333,
+          "memMax": 348975104
+        },
+        "k6": {
+          "cpuAvg": 26.427845844818744,
+          "cpuMax": 29.7791,
+          "memAvg": 391410858.6666667,
+          "memMax": 429371392
+        }
+      },
+      "span": {
+        "from": 1794934641359,
+        "to": 1794934761359
+      },
+      "agent": {
+        "spans": {
+          "accepted": 45901.810403297335,
+          "lost": 0
+        },
+        "metric_points": {
+          "accepted": 36981.26989095842,
+          "lost": 0
+        },
+        "log_records": {
+          "accepted": 0,
+          "lost": 0
+        }
+      },
+      "pipeline": {
+        "toMatcherP99": 0.0983882882882882,
+        "toSettledP99": 0.15364068441064638,
+        "outboxBacklogMax": 10
+      },
+      "host": {
+        "cpu": 0.11689173913043463,
+        "memory": 0.0005923478260869446,
+        "memoryFull": 0.0005276521739130402,
+        "io": 0.011982539130434835,
+        "ioFull": 0.008509843478261033,
+        "swapInPerSecond": 3.008695652173913,
+        "minAvailableBytes": 2014056448
+      }
+    },
+    {
+      "id": "traders-50",
+      "window": "1m",
+      "offered": "50 concurrent traders, 100 ms think",
+      "slo": {
+        "p95Ms": 30,
+        "p99Ms": 100,
+        "errorRate": 0.001
+      },
+      "verdict": "missed",
+      "latency": {
+        "p95": 50.025583199999986,
+        "p99": 103.96667487999993,
+        "errorRate": 0.0002346591575736243,
+        "dropped": 0,
+        "requestRate": 426.15
+      },
+      "resources": {
+        "edge": {
+          "cpuAvg": 7.217193039873452,
+          "cpuMax": 7.637763776377637,
+          "memAvg": 25417728,
+          "memMax": 25673728
+        },
+        "oms-api": {
+          "cpuAvg": 123.51093656248295,
+          "cpuMax": 127.8951104889511,
+          "memAvg": 483275776,
+          "memMax": 484179968
+        },
+        "oms-relay": {
+          "cpuAvg": 11.553322787687048,
+          "cpuMax": 13.224892489248925,
+          "memAvg": 107455829.33333333,
+          "memMax": 107888640
+        },
+        "matcher": {
+          "cpuAvg": 20.29394534446081,
+          "cpuMax": 21.661863813618638,
+          "memAvg": 130543274.66666667,
+          "memMax": 132313088
+        },
+        "oms-settler": {
+          "cpuAvg": 42.1800014545719,
+          "cpuMax": 43.99812962592518,
+          "memAvg": 115963221.33333333,
+          "memMax": 116531200
+        },
+        "marketdata": {
+          "cpuAvg": 8.709963817523954,
+          "cpuMax": 9.809288142371527,
+          "memAvg": 110972928,
+          "memMax": 111120384
+        },
+        "postgres": {
+          "cpuAvg": 108.81744940817106,
+          "cpuMax": 117.8957404259574,
+          "memAvg": 302738432,
+          "memMax": 327782400
+        },
+        "kafka": {
+          "cpuAvg": 57.13336424298624,
+          "cpuMax": 73.98250825082508,
+          "memAvg": 712436053.3333334,
+          "memMax": 782061568
+        },
+        "redis": {
+          "cpuAvg": 3.62120220367643,
+          "cpuMax": 3.803609639036096,
+          "memAvg": 10494293.333333334,
+          "memMax": 10731520
+        },
+        "otel-collector": {
+          "cpuAvg": 2.040686194294442,
+          "cpuMax": 2.528922892289229,
+          "memAvg": 123187541.33333333,
+          "memMax": 147943424
+        },
+        "tempo": {
+          "cpuAvg": 5.025267732140585,
+          "cpuMax": 11.674065186962608,
+          "memAvg": 294992554.6666667,
+          "memMax": 443277312
+        },
+        "loki": {
+          "cpuAvg": 0.6826160475645011,
+          "cpuMax": 1.306070607060706,
+          "memAvg": 75607722.66666667,
+          "memMax": 75784192
+        },
+        "mimir": {
+          "cpuAvg": 1.0775395916289388,
+          "cpuMax": 1.4685168516851683,
+          "memAvg": 228755456,
+          "memMax": 228794368
+        },
+        "grafana": {
+          "cpuAvg": 1.10986927035037,
+          "cpuMax": 1.813221322132213,
+          "memAvg": 352911018.6666667,
+          "memMax": 352923648
+        },
+        "k6": {
+          "cpuAvg": 22.48761432026037,
+          "cpuMax": 23.670732926707327,
+          "memAvg": 388473514.6666667,
+          "memMax": 391524352
+        }
+      },
+      "span": {
+        "from": 1794934820693,
+        "to": 1794934880693
+      },
+      "agent": {
+        "spans": {
+          "accepted": 52400.8654388102,
+          "lost": 0
+        },
+        "metric_points": {
+          "accepted": 17315.685169360557,
+          "lost": 0
+        },
+        "log_records": {
+          "accepted": 6.54533553935383,
+          "lost": 0
+        }
+      },
+      "pipeline": {
+        "toMatcherP99": 0.09612314662273477,
+        "toSettledP99": 2.3122801047120416,
+        "outboxBacklogMax": 22
+      },
+      "host": {
+        "cpu": 0.17860308369243288,
+        "memory": 0.00006121929489628514,
+        "memoryFull": 0.000046019018527630894,
+        "io": 0.025630484190621586,
+        "ioFull": 0.017077910507463486,
+        "swapInPerSecond": 2.7091401661848398,
+        "minAvailableBytes": 1893175296
+      }
+    },
+    {
+      "id": "traders-200",
+      "window": "1m",
+      "offered": "200 concurrent traders, 250 ms think",
+      "slo": {
+        "p95Ms": 60,
+        "p99Ms": 150,
+        "errorRate": 0.001
+      },
+      "verdict": "missed",
+      "latency": {
+        "p95": 218.11425229999983,
+        "p99": 326.54674074999997,
+        "errorRate": 0,
+        "dropped": 0,
+        "requestRate": 637.9
+      },
+      "resources": {
+        "edge": {
+          "cpuAvg": 11.161063636363634,
+          "cpuMax": 11.72109,
+          "memAvg": 27128149.333333332,
+          "memMax": 28016640
+        },
+        "oms-api": {
+          "cpuAvg": 170.64835818181817,
+          "cpuMax": 174.99391,
+          "memAvg": 492489045.3333333,
+          "memMax": 505180160
+        },
+        "oms-relay": {
+          "cpuAvg": 13.926198181818181,
+          "cpuMax": 16.8786,
+          "memAvg": 108829696,
+          "memMax": 121286656
+        },
+        "matcher": {
+          "cpuAvg": 23.95449818181818,
+          "cpuMax": 25.83416,
+          "memAvg": 148635989.33333334,
+          "memMax": 157319168
+        },
+        "oms-settler": {
+          "cpuAvg": 36.35108181818181,
+          "cpuMax": 38.17955,
+          "memAvg": 126412458.66666667,
+          "memMax": 140492800
+        },
+        "marketdata": {
+          "cpuAvg": 9.636974545454546,
+          "cpuMax": 11.85638,
+          "memAvg": 112462165.33333333,
+          "memMax": 125046784
+        },
+        "postgres": {
+          "cpuAvg": 141.00627272727272,
+          "cpuMax": 148.94161,
+          "memAvg": 372959232,
+          "memMax": 400445440
+        },
+        "kafka": {
+          "cpuAvg": 64.72174,
+          "cpuMax": 76.04671,
+          "memAvg": 713350485.3333334,
+          "memMax": 807272448
+        },
+        "redis": {
+          "cpuAvg": 4.87684,
+          "cpuMax": 5.103149685031497,
+          "memAvg": 10483712,
+          "memMax": 10584064
+        },
+        "otel-collector": {
+          "cpuAvg": 2.108852727272727,
+          "cpuMax": 2.53893,
+          "memAvg": 119989248,
+          "memMax": 122593280
+        },
+        "tempo": {
+          "cpuAvg": 6.2782872727272725,
+          "cpuMax": 10.167426742674268,
+          "memAvg": 238178304,
+          "memMax": 288030720
+        },
+        "loki": {
+          "cpuAvg": 0.7106490909090908,
+          "cpuMax": 1.32069,
+          "memAvg": 77678592,
+          "memMax": 78598144
+        },
+        "mimir": {
+          "cpuAvg": 1.1055963636363635,
+          "cpuMax": 1.222947705229477,
+          "memAvg": 224795648,
+          "memMax": 224821248
+        },
+        "grafana": {
+          "cpuAvg": 1.1692745454545455,
+          "cpuMax": 1.594030596940306,
+          "memAvg": 321377280,
+          "memMax": 355962880
+        },
+        "k6": {
+          "cpuAvg": 32.26373636363636,
+          "cpuMax": 34.52295,
+          "memAvg": 415407104,
+          "memMax": 419254272
+        }
+      },
+      "span": {
+        "from": 1794934963767,
+        "to": 1794935023767
+      },
+      "agent": {
+        "spans": {
+          "accepted": 60260.727272727265,
+          "lost": 0
+        },
+        "metric_points": {
+          "accepted": 17305.090909090908,
+          "lost": 0
+        },
+        "log_records": {
+          "accepted": 0,
+          "lost": 0
+        }
+      },
+      "pipeline": {
+        "toMatcherP99": 0.307560307017546,
+        "toSettledP99": 10,
+        "outboxBacklogMax": 15
+      },
+      "host": {
+        "cpu": 0.29281007272727283,
+        "memory": 0.0011119999999999856,
+        "memoryFull": 0.0009416000000000029,
+        "io": 0.029864363636363574,
+        "ioFull": 0.01677812727272706,
+        "swapInPerSecond": 2.709090909090909,
+        "minAvailableBytes": 1877807104
+      }
+    }
+  ]
+}

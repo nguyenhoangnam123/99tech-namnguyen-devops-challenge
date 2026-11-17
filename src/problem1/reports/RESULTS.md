@@ -2,21 +2,56 @@
 
 **Environment:** one MacBook (M2 Pro, 10 cores). Docker Desktop VM with 10 vCPU and 8 GB,
 running all 12 containers plus k6. Each Node service is limited to 1 CPU, Postgres to 2,
-Kafka to 1.5.
+Kafka to 1.5. SLO runs add the six observability containers and trace 10% of requests.
 
 ## Test suites
 
-All suites were run on a fresh stack (`make nuke up`). Raw output is in [tests/](tests).
+All suites were run on a fresh default stack, telemetry off as in CI. Raw output is in
+[tests/](tests).
 
 | Suite | Result | Notes |
 |---|---|---|
-| Unit and property | 88 passed | fast-check runs 100 random command streams per property |
-| Integration (real Postgres) | 6 passed | testcontainers, every migration applied |
+| Unit and property | 94 passed | fast-check runs 100 random command streams per property |
+| Integration (real Postgres) | 7 passed | testcontainers; includes the settlement deadlock race |
 | E2E transactions and contract | 30 passed | ledger invariants checked after every file |
 | Chaos | 2 passed | matcher restart rebuilt by replay; settler SIGKILL settled exactly once |
-| Abuse (pen test) | 16 passed | [security/after-qa-fixes.txt](security/after-qa-fixes.txt) |
-| OWASP ZAP API scan | 0 High, 0 Medium, 0 Low | both specs; [zap/](zap) has HTML and JSON reports |
-| Dependency audit | 0 production vulnerabilities | 2 moderate, dev-only, via testcontainers |
+| Abuse (pen test) | 16 passed | [tests/security.txt](tests/security.txt) |
+| OWASP ZAP API scan | 0 High, 0 Medium, 0 Low | previous round, API unchanged; [zap/](zap) |
+| Dependency audit | 0 production vulnerabilities | previous round; 2 moderate, dev-only |
+
+## SLO catalog
+
+Seven scenarios, each with its own load, window, size and p95/p99 objective, run by
+`make slo` on commit `d020274`. Full output, with CPU and memory for every container, is
+in [slo/RESULTS.md](slo/RESULTS.md); every number is also in `slo/RESULTS.json`.
+
+| Scenario | Load | p95 / p99 measured | Objective | Verdict |
+|---|---|---:|---:|---|
+| market-browse | 300 req/s public reads | 2.8 / 12.5 ms | 10 / 30 ms | met |
+| deep-book | 200 req/s, 100-level depth of a 1,000-level book | 4.4 / 27.1 ms | 15 / 40 ms | met |
+| account-reads | 150 req/s balances, orders, fills | 7.7 / 22.0 ms | 15 / 40 ms | met |
+| order-entry | 200 req/s place and cancel | 13.3 / 42.6 ms | 25 / 75 ms | met |
+| **peak-mix (P1 target)** | **500 req/s mixed** | **12.6 / 51.3 ms** | **25 / 100 ms** | **met** |
+| traders-50 | 50 closed-loop traders, 426 orders/s | 50.0 / 104.0 ms | 30 / 100 ms | missed |
+| traders-200 | 200 closed-loop traders, 638 orders/s | 218.1 / 326.5 ms | 60 / 150 ms | missed |
+
+Every open-model scenario met its objective with no dropped requests, including the P1
+target. The two closed-loop scenarios send nothing but orders, at 3 to 5 times peak-mix's
+order rate, and they find the limits:
+
+- **API CPU.** oms-api used 124% of its two cores in traders-50 and 171% in traders-200.
+  Each replica is one event loop, so latency queues there. More replicas
+  (`OMS_API_REPLICAS`) is the lever; tracing alone adds about 10 ms of p95 at this load
+  ([slo/OVERHEAD.md](slo/OVERHEAD.md)).
+- **Settlement per market.** One market settles serially, about 450 commands/s on this
+  laptop. Settled p99 was 154 ms in peak-mix, 2.3 s in traders-50 and over 10 s in
+  traders-200. Batching several commands per transaction, or more markets, raises it.
+
+The objectives were set before measuring and are kept. Moving them until everything
+passes would hide what these two scenarios exist to show.
+
+How runs are kept comparable (empty state, drained setup, warm-up, VM stall capture) is in
+[docs/DEVELOPMENT.md](../docs/DEVELOPMENT.md#7-slo-tests).
 
 ## Load: 500 rps for 2 minutes, open model
 

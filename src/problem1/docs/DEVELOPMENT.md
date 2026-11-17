@@ -182,7 +182,7 @@ flowchart LR
 | Unit and property tests                 | `make test`                                                 | ~2 s    |
 | Integration (testcontainers)            | `make test-integration`                                     | ~20 s   |
 | E2E, chaos, abuse                       | `make e2e`, `make chaos`, `make security`                   | ~3 min  |
-| SLO catalog                             | `make slo`                                                  | ~20 min |
+| SLO catalog                             | `make slo`                                                  | ~25 min |
 | A/B two commits                         | `make ab A=<sha> B=<sha>`                                   | ~12 min |
 
 ## 5. One order, end to end
