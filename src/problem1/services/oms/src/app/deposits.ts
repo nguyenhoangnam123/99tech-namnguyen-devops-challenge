@@ -1,5 +1,14 @@
-import { type Amount, type Asset, type Result, depositJournal, err, ok } from '@exchange/core';
-import type { Clock, DepositRecord, DepositStatus, UnitOfWork } from './ports.js';
+import {
+  type Amount,
+  type Asset,
+  InvariantViolation,
+  type Journal,
+  type Result,
+  depositJournal,
+  err,
+  ok,
+} from '@exchange/core';
+import type { Clock, DepositRecord, DepositStatus, TransactionPorts, UnitOfWork } from './ports.js';
 
 export interface DepositNotice {
   readonly txId: string;
@@ -44,7 +53,8 @@ export class DepositService {
           : err('TX_ID_CONFLICT');
       }
       if (stored.userId !== null) {
-        await tx.ledger.post(
+        await postCredit(
+          tx,
           depositJournal({
             txId: stored.txId,
             userId: stored.userId,
@@ -64,4 +74,11 @@ function isSameNotice(stored: DepositRecord, notice: DepositNotice): boolean {
     stored.asset === notice.asset &&
     stored.amount === notice.amount
   );
+}
+
+// A credit only adds to a balance, so a refusal means the ledger is broken.
+async function postCredit(tx: TransactionPorts, journal: Journal): Promise<void> {
+  if ((await tx.ledger.post(journal)) !== 'POSTED') {
+    throw new InvariantViolation(`Deposit ${journal.refId} was refused`);
+  }
 }

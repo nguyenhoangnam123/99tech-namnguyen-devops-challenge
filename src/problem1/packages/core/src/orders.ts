@@ -7,7 +7,8 @@ export type OrderType = 'LIMIT' | 'MARKET';
 export type TimeInForce = 'GTC' | 'IOC';
 export type OrderStatus = 'NEW' | 'PARTIALLY_FILLED' | 'FILLED' | 'CANCELLED' | 'EXPIRED';
 export type FinalStatus = Extract<OrderStatus, 'FILLED' | 'CANCELLED' | 'EXPIRED'>;
-export type DoneReason = 'FILLED' | 'USER_CANCEL' | 'IOC_REMAINDER' | 'SELF_TRADE' | 'NO_LIQUIDITY';
+export type DoneReason =
+  'FILLED' | 'USER_CANCEL' | 'IOC_REMAINDER' | 'SELF_TRADE' | 'NO_LIQUIDITY' | 'FILL_LIMIT';
 
 export interface LimitOrderSpec {
   readonly type: 'LIMIT';

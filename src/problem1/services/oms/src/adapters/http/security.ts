@@ -11,7 +11,7 @@ const header = (request: SecurityRequest, name: string): string | undefined => {
 
 export function bearerAuth(tokens: JwtTokens): SecurityHandler {
   return async (request): Promise<Principal | undefined> => {
-    const match = /^Bearer (\S+)$/.exec(header(request, 'authorization') ?? '');
+    const match = /^Bearer (\S+)$/i.exec(header(request, 'authorization') ?? '');
     const userId = match?.[1] ? await tokens.verify(match[1]) : undefined;
     return userId ? { subject: userId, kind: 'user' } : undefined;
   };

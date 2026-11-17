@@ -28,6 +28,7 @@ export function createDatabase<DB>(options: DatabaseOptions, logger: Logger): Da
     idleTimeoutMillis: 30_000,
     application_name: options.applicationName,
     statement_timeout: options.statementTimeoutMs ?? 5_000,
+    idle_in_transaction_session_timeout: 10_000,
   });
   pool.on('error', (error) => {
     logger.error({ err: error }, 'idle postgres client failed');

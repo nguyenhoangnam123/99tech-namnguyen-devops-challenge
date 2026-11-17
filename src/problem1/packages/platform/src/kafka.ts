@@ -54,17 +54,22 @@ export function createProducer(kafka: Kafka, transactionalId?: string): Producer
 export interface ConsumerOptions {
   readonly groupId: string;
   readonly fromBeginning?: boolean;
+  // Static membership: a restarted instance gets its partitions back
+  // at once instead of waiting out the dead member's session.
+  readonly instanceId?: string;
 }
 
 // Offsets are committed by the caller after its side effects succeed.
 export function createConsumer(kafka: Kafka, options: ConsumerOptions): Consumer {
   return kafka.consumer({
     'js.consumer.max.batch.size': 256,
+    ...(options.instanceId ? { 'group.instance.id': options.instanceId } : {}),
     kafkaJS: {
       groupId: options.groupId,
       fromBeginning: options.fromBeginning ?? true,
       autoCommit: false,
       maxWaitTimeInMs: 50,
+      sessionTimeout: 10_000,
     },
   });
 }

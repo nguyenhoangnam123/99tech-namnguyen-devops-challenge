@@ -11,6 +11,8 @@ import {
 } from '@exchange/platform';
 import type { MarketData } from '../../app/market-data.js';
 
+const IDLE_CAUGHT_UP_MS = 3_000;
+
 // Each instance rebuilds its read model from the start of the log and
 // never commits offsets, so instances share nothing and scale freely.
 export class EventFeed {
@@ -18,6 +20,8 @@ export class EventFeed {
   private readonly lastApplied = new Map<number, bigint>();
   private readonly pending = new Map<number, bigint>();
   private caughtUp = false;
+  private lastProgressAt = Date.now();
+  private idleCheck: NodeJS.Timeout | undefined;
   private readonly applied: Counter;
 
   constructor(
@@ -56,6 +60,7 @@ export class EventFeed {
             this.applied.inc();
             this.markProgress(batch.partition, offset);
           }
+          this.lastProgressAt = Date.now();
           await Promise.resolve();
         } catch (error) {
           this.onFatal(error);
@@ -63,9 +68,13 @@ export class EventFeed {
         }
       },
     });
+    this.idleCheck = setInterval(() => {
+      this.markIdle();
+    }, 500);
   }
 
   stop(): Promise<void> {
+    clearInterval(this.idleCheck);
     return this.consumer?.disconnect() ?? Promise.resolve();
   }
 
@@ -75,6 +84,13 @@ export class EventFeed {
       if (high > low) this.pending.set(partition, high);
     }
     this.caughtUp = this.pending.size === 0;
+  }
+
+  // A log ending in an aborted transaction never reaches the target,
+  // so a feed that has been quiet for a while counts as caught up.
+  private markIdle(): void {
+    if (!this.caughtUp && Date.now() - this.lastProgressAt > IDLE_CAUGHT_UP_MS)
+      this.caughtUp = true;
   }
 
   private markProgress(partition: number, offset: bigint): void {

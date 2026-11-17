@@ -10,7 +10,8 @@ import {
   sql,
 } from '@exchange/platform';
 
-// One active relay at a time keeps per-order command order (place, then cancel).
+// One active relay at a time publishes in outbox id order; two relays
+// could interleave batches and reorder commands for the same symbol.
 const RELAY_LOCK_KEY = 4_242_001;
 const RETENTION = '1 hour';
 

@@ -44,7 +44,6 @@ function encodeEvent(event: MatcherEvent): ProtoEvent {
         kind: {
           case: 'trade',
           value: {
-            tradeId: eventId,
             price: formatAmount(event.price),
             quantity: formatAmount(event.quantity),
             takerSide: sideCodec.encode(event.takerSide),

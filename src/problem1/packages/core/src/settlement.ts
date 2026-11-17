@@ -11,7 +11,11 @@ export type LiquidityRole = 'MAKER' | 'TAKER';
 export interface OrderFunds {
   readonly orderId: string;
   readonly userId: string;
+  readonly symbol: string;
   readonly side: Side;
+  // Null for market orders; a market buy is bounded by its hold instead.
+  readonly limitPrice: Amount | null;
+  readonly orderQuantity: Amount | null;
   readonly reservedAsset: Asset;
   readonly reservedRemaining: Amount;
   readonly filledQuantity: Amount;
@@ -115,6 +119,22 @@ function assertParties(trade: TradeEvent, maker: OrderFunds, taker: OrderFunds):
   if (!matches) throw new InvariantViolation(`Trade ${trade.eventId} does not match its orders`);
   if (isFinal(maker.status) || isFinal(taker.status)) {
     throw new InvariantViolation(`Trade ${trade.eventId} hits a closed order`);
+  }
+  if (maker.limitPrice === null)
+    throw new InvariantViolation(`Maker ${maker.orderId} is not a limit`);
+  for (const order of [maker, taker]) assertWithinTerms(trade, order);
+}
+
+// The matcher is trusted, not blindly: a trade outside an order's own
+// terms stops the line instead of moving money.
+function assertWithinTerms(trade: TradeEvent, order: OrderFunds): void {
+  const { limitPrice, orderQuantity } = order;
+  const priceOk =
+    limitPrice === null ||
+    (order.side === 'BUY' ? trade.price <= limitPrice : trade.price >= limitPrice);
+  const sizeOk = orderQuantity === null || order.filledQuantity + trade.quantity <= orderQuantity;
+  if (order.symbol !== trade.symbol || !priceOk || !sizeOk) {
+    throw new InvariantViolation(`Trade ${trade.eventId} breaks the terms of ${order.orderId}`);
   }
 }
 

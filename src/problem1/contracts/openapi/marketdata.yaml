@@ -37,6 +37,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Depth' }
         '400': { $ref: '#/components/responses/Problem' }
+        '503': { $ref: '#/components/responses/Problem' }
 
   /v1/markets/{symbol}/trades:
     get:
@@ -54,6 +55,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/TradeList' }
         '400': { $ref: '#/components/responses/Problem' }
+        '503': { $ref: '#/components/responses/Problem' }
 
   /v1/markets/{symbol}/ticker:
     get:
@@ -68,6 +70,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Ticker' }
         '400': { $ref: '#/components/responses/Problem' }
+        '503': { $ref: '#/components/responses/Problem' }
 
   /healthz:
     get:
@@ -129,7 +132,8 @@ components:
     Market:
       type: object
       additionalProperties: false
-      required: [symbol, base, quote, tickSize, lotSize, minNotional, makerFeeRate, takerFeeRate]
+      required:
+        [symbol, base, quote, tickSize, lotSize, minNotional, maxPrice, maxQuantity, makerFeeRate, takerFeeRate]
       properties:
         symbol: { $ref: '#/components/schemas/Symbol' }
         base: { type: string }
@@ -137,6 +141,8 @@ components:
         tickSize: { $ref: '#/components/schemas/Decimal' }
         lotSize: { $ref: '#/components/schemas/Decimal' }
         minNotional: { $ref: '#/components/schemas/Decimal' }
+        maxPrice: { $ref: '#/components/schemas/Decimal' }
+        maxQuantity: { $ref: '#/components/schemas/Decimal' }
         makerFeeRate: { $ref: '#/components/schemas/Decimal' }
         takerFeeRate: { $ref: '#/components/schemas/Decimal' }
     MarketList:

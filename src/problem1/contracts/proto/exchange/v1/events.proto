@@ -23,8 +23,10 @@ message MatcherEvent {
   }
 }
 
+// The trade id is the event id.
 message Trade {
-  string trade_id = 1;
+  reserved 1;
+  reserved "trade_id";
   string price = 2;
   string quantity = 3;
   Side taker_side = 4;
@@ -49,6 +51,7 @@ enum DoneReason {
   DONE_REASON_IOC_REMAINDER = 3;
   DONE_REASON_SELF_TRADE = 4;
   DONE_REASON_NO_LIQUIDITY = 5;
+  DONE_REASON_FILL_LIMIT = 6;
 }
 
 // Terminal state; settlement releases whatever is still held.

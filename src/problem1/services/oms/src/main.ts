@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { hostname } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import type { DB } from '@exchange/contracts';
 import {
@@ -146,6 +147,7 @@ async function startSettler(
 ): Promise<void> {
   const consumer = createConsumer(createKafka(config.KAFKA_BROKERS, 'oms-settler', logger), {
     groupId: SETTLER_CONSUMER,
+    instanceId: hostname(),
   });
   const settlement = new SettlementService(new PgUnitOfWork(database.db), clock);
   const worker = new SettlementConsumer(

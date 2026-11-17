@@ -361,7 +361,10 @@ components:
       type: object
       additionalProperties: false
       required: [clientOrderId, symbol, side, type]
-      description: LIMIT needs price and quantity. MARKET SELL needs quantity, MARKET BUY needs quoteQuantity.
+      description: >-
+        LIMIT needs price and quantity. MARKET SELL needs quantity, MARKET BUY needs quoteQuantity.
+        422 codes: UNKNOWN_SYMBOL, INVALID_ORDER_SHAPE, INVALID_PRICE, INVALID_QUANTITY,
+        BELOW_MIN_NOTIONAL, ABOVE_MAX_NOTIONAL, INSUFFICIENT_FUNDS.
       properties:
         clientOrderId: { type: string, pattern: '^[A-Za-z0-9_-]{1,36}$' }
         symbol: { $ref: '#/components/schemas/Symbol' }
@@ -387,6 +390,7 @@ components:
         - filledQuantity
         - filledQuote
         - status
+        - doneReason
         - cancelRequested
         - createdAt
         - updatedAt
@@ -403,6 +407,10 @@ components:
         filledQuantity: { $ref: '#/components/schemas/Decimal' }
         filledQuote: { $ref: '#/components/schemas/Decimal' }
         status: { $ref: '#/components/schemas/OrderStatus' }
+        doneReason:
+          type: string
+          nullable: true
+          enum: [FILLED, USER_CANCEL, IOC_REMAINDER, SELF_TRADE, NO_LIQUIDITY, FILL_LIMIT, null]
         cancelRequested: { type: boolean }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }

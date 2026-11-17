@@ -22,7 +22,10 @@ const trade: TradeEvent = {
 const ask: OrderFunds = {
   orderId: 'ask',
   userId: 'seller',
+  symbol: 'BTC-USDT',
   side: 'SELL',
+  limitPrice: amt('100'),
+  orderQuantity: amt('5'),
   reservedAsset: 'BTC',
   reservedRemaining: amt('5'),
   filledQuantity: 0n,
@@ -34,7 +37,10 @@ const ask: OrderFunds = {
 const bid: OrderFunds = {
   orderId: 'bid',
   userId: 'buyer',
+  symbol: 'BTC-USDT',
   side: 'BUY',
+  limitPrice: amt('110'),
+  orderQuantity: amt('2'),
   reservedAsset: 'USDT',
   reservedRemaining: amt('220'),
   filledQuantity: 0n,
@@ -95,6 +101,23 @@ describe('settleTrade', () => {
   it('stops the line when a trade would overspend a hold', () => {
     const thin = { ...bid, reservedRemaining: amt('199.99') };
     expect(() => settleTrade(trade, ask, thin, BTC)).toThrow(InvariantViolation);
+  });
+
+  it.each<[string, Partial<TradeEvent>, Partial<OrderFunds>, Partial<OrderFunds>]>([
+    ['above the buy limit', { price: amt('111') }, { limitPrice: amt('111') }, {}],
+    ['below the sell limit', { price: amt('99') }, {}, {}],
+    ['beyond the order size', {}, {}, { orderQuantity: amt('1.5') }],
+    ['on another market', { symbol: 'ETH-USDT' }, {}, {}],
+    ['against a market maker', {}, { limitPrice: null }, {}],
+  ])('stops the line on a trade %s', (_label, tradePatch, makerPatch, takerPatch) => {
+    expect(() =>
+      settleTrade(
+        { ...trade, ...tradePatch },
+        { ...ask, ...makerPatch },
+        { ...bid, ...takerPatch },
+        BTC,
+      ),
+    ).toThrow(InvariantViolation);
   });
 
   it('refuses trades that do not match their orders', () => {

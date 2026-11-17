@@ -68,12 +68,14 @@ export class Trader {
 
   static async create(name = 'trader'): Promise<Trader> {
     const email = `${uniqueId(name)}@example.test`;
-    const password = 'correct horse battery staple';
-    const registered = await call<Oms['Registered']>('POST', '/v1/auth/register', {
-      body: { email, password },
-    });
+    const body = { email, password: 'correct horse battery staple' };
+    const registered = await withAuthBudget(() =>
+      call<Oms['Registered']>('POST', '/v1/auth/register', { body }),
+    );
     if (registered.status !== 201) throw new Error(`register failed: ${String(registered.status)}`);
-    const login = await call<Oms['Token']>('POST', '/v1/auth/login', { body: { email, password } });
+    const login = await withAuthBudget(() =>
+      call<Oms['Token']>('POST', '/v1/auth/login', { body }),
+    );
     if (login.status !== 200) throw new Error(`login failed: ${String(login.status)}`);
     return new Trader(email, registered.body.userId, login.body.accessToken);
   }
@@ -141,6 +143,16 @@ export class Trader {
       async () => (await this.order(orderId)).body,
       (order) => statuses.includes(order.status),
     );
+  }
+}
+
+// The auth limiter is per client IP and suites share one IP; the abuse
+// suite spends the budget on purpose, so wait out its window.
+async function withAuthBudget<T>(send: () => Promise<Response<T>>): Promise<Response<T>> {
+  for (let attempt = 0; ; attempt++) {
+    const response = await send();
+    if (response.status !== 429 || attempt === 15) return response;
+    await new Promise((resolve) => setTimeout(resolve, 5_000));
   }
 }
 

@@ -53,4 +53,5 @@ export const doneReasonCodec = enumCodec<core.DoneReason, DoneReason>('done reas
   ['IOC_REMAINDER', DoneReason.IOC_REMAINDER],
   ['SELF_TRADE', DoneReason.SELF_TRADE],
   ['NO_LIQUIDITY', DoneReason.NO_LIQUIDITY],
+  ['FILL_LIMIT', DoneReason.FILL_LIMIT],
 ]);

@@ -1,5 +1,5 @@
 import type { DB } from '@exchange/contracts';
-import type { Err, Result } from '@exchange/core';
+import { type Err, InvariantViolation, type Result } from '@exchange/core';
 import type { Kysely, Transaction } from '@exchange/platform';
 import type { TransactionPorts, UnitOfWork } from '../../app/ports.js';
 import { PgLedgerStore } from './ledger-store.js';
@@ -19,6 +19,16 @@ class Rollback<E extends string> extends Error {
   }
 }
 
+// Postgres aborts a transaction after a failed statement; committing it
+// would silently roll back. Refuse to report success in that case.
+class Guard {
+  refused = false;
+
+  check(): void {
+    if (this.refused) throw new InvariantViolation('Work succeeded after a refused journal');
+  }
+}
+
 export class PgUnitOfWork implements UnitOfWork {
   constructor(private readonly db: Kysely<DB>) {}
 
@@ -27,8 +37,10 @@ export class PgUnitOfWork implements UnitOfWork {
   ): Promise<Result<T, E>> {
     try {
       return await this.db.transaction().execute(async (trx) => {
-        const result = await work(portsFor(trx));
+        const guard = new Guard();
+        const result = await work(portsFor(trx, guard));
         if (!result.ok) throw new Rollback(result);
+        guard.check();
         return result;
       });
     } catch (error) {
@@ -38,14 +50,21 @@ export class PgUnitOfWork implements UnitOfWork {
   }
 
   execute<T>(work: (tx: TransactionPorts) => Promise<T>): Promise<T> {
-    return this.db.transaction().execute((trx) => work(portsFor(trx)));
+    return this.db.transaction().execute(async (trx) => {
+      const guard = new Guard();
+      const value = await work(portsFor(trx, guard));
+      guard.check();
+      return value;
+    });
   }
 }
 
-function portsFor(trx: Transaction<DB>): TransactionPorts {
+function portsFor(trx: Transaction<DB>, guard: Guard): TransactionPorts {
   return {
     users: new PgUserStore(trx),
-    ledger: new PgLedgerStore(trx),
+    ledger: new PgLedgerStore(trx, () => {
+      guard.refused = true;
+    }),
     orders: new PgOrderStore(trx),
     fills: new PgFillStore(trx),
     deposits: new PgDepositStore(trx),

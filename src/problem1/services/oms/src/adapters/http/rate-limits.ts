@@ -7,24 +7,16 @@ export interface RateLimitConfig {
   readonly ordersPerSecond: number;
 }
 
-// Per IP stops floods; per account stops slow guessing from many IPs.
+// Per IP stops floods; per account stops guessing from many IPs.
 // Redis-backed; a Redis outage falls back to per-process memory.
 export class RateLimits {
   private readonly authByIp: RateLimiterRedis;
-  private readonly loginFailures: RateLimiterRedis;
+  private readonly loginAttempts: RateLimiterRedis;
   private readonly orders: RateLimiterRedis;
 
-  constructor(
-    redis: Redis,
-    private readonly config: RateLimitConfig,
-  ) {
+  constructor(redis: Redis, config: RateLimitConfig) {
     this.authByIp = limiter(redis, 'rl:auth-ip', config.authPerIpPerMinute, 60);
-    this.loginFailures = limiter(
-      redis,
-      'rl:login-fail',
-      config.loginsPerAccountPer15Minutes,
-      15 * 60,
-    );
+    this.loginAttempts = limiter(redis, 'rl:login', config.loginsPerAccountPer15Minutes, 15 * 60);
     this.orders = limiter(redis, 'rl:orders', config.ordersPerSecond, 1);
   }
 
@@ -32,17 +24,15 @@ export class RateLimits {
     return consume(this.authByIp, clientIp);
   }
 
-  // Only failures count against the account; a success clears them.
+  // Every attempt is counted atomically before the password is checked,
+  // so concurrent guesses cannot race past the limit. Success clears it.
   async allowLogin(clientIp: string, email: string): Promise<boolean> {
     if (!(await consume(this.authByIp, clientIp))) return false;
-    const failures = await this.loginFailures.get(email.toLowerCase()).catch(() => null);
-    return (failures?.consumedPoints ?? 0) < this.config.loginsPerAccountPer15Minutes;
+    return consume(this.loginAttempts, email.toLowerCase());
   }
 
-  async recordLogin(email: string, succeeded: boolean): Promise<void> {
-    const key = email.toLowerCase();
-    if (succeeded) await this.loginFailures.delete(key);
-    else await this.loginFailures.penalty(key, 1);
+  async loginSucceeded(email: string): Promise<void> {
+    await this.loginAttempts.delete(email.toLowerCase());
   }
 
   allowOrder(userId: string): Promise<boolean> {

@@ -226,7 +226,7 @@ export interface components {
             status: "CREDITED" | "UNMATCHED";
             duplicate: boolean;
         };
-        /** @description LIMIT needs price and quantity. MARKET SELL needs quantity, MARKET BUY needs quoteQuantity. */
+        /** @description LIMIT needs price and quantity. MARKET SELL needs quantity, MARKET BUY needs quoteQuantity. 422 codes: UNKNOWN_SYMBOL, INVALID_ORDER_SHAPE, INVALID_PRICE, INVALID_QUANTITY, BELOW_MIN_NOTIONAL, ABOVE_MAX_NOTIONAL, INSUFFICIENT_FUNDS. */
         PlaceOrderRequest: {
             clientOrderId: string;
             symbol: components["schemas"]["Symbol"];
@@ -251,6 +251,8 @@ export interface components {
             filledQuantity: components["schemas"]["Decimal"];
             filledQuote: components["schemas"]["Decimal"];
             status: components["schemas"]["OrderStatus"];
+            /** @enum {string|null} */
+            doneReason: "FILLED" | "USER_CANCEL" | "IOC_REMAINDER" | "SELF_TRADE" | "NO_LIQUIDITY" | "FILL_LIMIT" | null;
             cancelRequested: boolean;
             /** Format: date-time */
             createdAt: string;

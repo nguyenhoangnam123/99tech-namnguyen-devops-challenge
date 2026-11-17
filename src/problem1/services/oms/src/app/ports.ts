@@ -74,14 +74,15 @@ export interface UserStore {
 
 export interface LedgerStore {
   openUserAccounts(userId: string): Promise<void>;
-  // Atomic; a user balance that would go negative fails the whole journal.
+  // A user balance that would go negative fails the journal. The transaction
+  // is then unusable: the caller must return an error so it rolls back.
   post(journal: Journal): Promise<'POSTED' | 'INSUFFICIENT_FUNDS'>;
 }
 
 export interface OrderStore {
   insertIfAbsent(order: NewOrder): Promise<Inserted<OrderRecord>>;
   lockOwned(userId: string, orderId: string): Promise<OrderRecord | undefined>;
-  // Locks in id order so concurrent settlements cannot deadlock.
+  // Locks the given orders in id order within this call.
   lockMany(orderIds: readonly string[]): Promise<Map<string, OrderRecord>>;
   markCancelRequested(orderId: string, at: Date): Promise<OrderRecord>;
   saveFunds(order: OrderFunds, at: Date, doneReason?: DoneReason): Promise<void>;

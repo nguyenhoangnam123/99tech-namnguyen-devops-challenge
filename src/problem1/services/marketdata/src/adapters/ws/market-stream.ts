@@ -165,7 +165,7 @@ export class MarketStream {
     for (const client of this.clients) {
       if (!client.channels.has(channel)) continue;
       payload ??= JSON.stringify(build());
-      if (client.socket.readyState === WebSocket.OPEN) client.socket.send(payload);
+      send(client.socket, payload);
     }
   }
 
@@ -183,8 +183,16 @@ export class MarketStream {
   }
 }
 
-function send(socket: WebSocket, message: Outgoing): void {
-  if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message));
+const MAX_BUFFERED_BYTES = 1024 * 1024;
+
+// A reader that falls this far behind is dropped rather than buffered forever.
+function send(socket: WebSocket, message: Outgoing | string): void {
+  if (socket.readyState !== WebSocket.OPEN) return;
+  if (socket.bufferedAmount > MAX_BUFFERED_BYTES) {
+    socket.terminate();
+    return;
+  }
+  socket.send(typeof message === 'string' ? message : JSON.stringify(message));
 }
 
 function safeJson(raw: string): unknown {

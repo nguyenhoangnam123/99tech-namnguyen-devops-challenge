@@ -117,6 +117,8 @@ export interface components {
             tickSize: components["schemas"]["Decimal"];
             lotSize: components["schemas"]["Decimal"];
             minNotional: components["schemas"]["Decimal"];
+            maxPrice: components["schemas"]["Decimal"];
+            maxQuantity: components["schemas"]["Decimal"];
             makerFeeRate: components["schemas"]["Decimal"];
             takerFeeRate: components["schemas"]["Decimal"];
         };
@@ -254,6 +256,7 @@ export interface operations {
                 };
             };
             400: components["responses"]["Problem"];
+            503: components["responses"]["Problem"];
         };
     };
     getRecentTrades: {
@@ -279,6 +282,7 @@ export interface operations {
                 };
             };
             400: components["responses"]["Problem"];
+            503: components["responses"]["Problem"];
         };
     };
     getTicker: {
@@ -302,6 +306,7 @@ export interface operations {
                 };
             };
             400: components["responses"]["Problem"];
+            503: components["responses"]["Problem"];
         };
     };
     liveness: {

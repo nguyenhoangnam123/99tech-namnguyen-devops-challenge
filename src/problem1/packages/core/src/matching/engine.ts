@@ -7,6 +7,9 @@ import type { CancelCommand, MatcherCommand, MatcherEvent, PlaceCommand } from '
 import { RecentIds } from './recent-ids.js';
 
 const DEFAULT_DEDUPE_WINDOW = 100_000;
+// Bounds one command's event batch: a sweep of thousands of dust
+// makers would otherwise exceed the Kafka message size and halt matching.
+const DEFAULT_MAX_FILLS = 500;
 
 // Price-time priority matching for one market. Pure and deterministic:
 // the same command sequence always yields the same events and ids.
@@ -18,6 +21,7 @@ export class MatchingEngine {
 
   constructor(
     readonly market: Market,
+    private readonly maxFills = DEFAULT_MAX_FILLS,
     dedupeWindow = DEFAULT_DEDUPE_WINDOW,
   ) {
     this.recent = new RecentIds(dedupeWindow);
@@ -52,6 +56,10 @@ export class MatchingEngine {
       if (!maker) throw new InvariantViolation('Empty price level');
       if (maker.userId === command.userId) {
         stoppedBy = 'SELF_TRADE';
+        break;
+      }
+      if (taker.fills === this.maxFills) {
+        stoppedBy = 'FILL_LIMIT';
         break;
       }
       const quantity = taker.fillableAgainst(maker.remaining, level.price);
@@ -92,7 +100,7 @@ export class MatchingEngine {
       return spec.timeInForce === 'GTC' ? 'REST' : { status: 'EXPIRED', reason: 'IOC_REMAINDER' };
     }
     const bestOpposite = this.sideOf(opposite(spec.side)).best()?.price;
-    return taker.isBudgetSpent(bestOpposite)
+    return taker.isBudgetSpent(bestOpposite) && taker.fills > 0
       ? FILLED
       : { status: 'EXPIRED', reason: 'NO_LIQUIDITY' };
   }
@@ -140,6 +148,7 @@ const opposite = (side: Side): Side => (side === 'BUY' ? 'SELL' : 'BUY');
 // Tracks what the incoming order may still take from the book.
 class Taker {
   remainingQuantity: Amount;
+  fills = 0;
   private remainingBudget: Amount;
 
   constructor(
@@ -168,6 +177,7 @@ class Taker {
   }
 
   fill(quantity: Amount, price: Amount): void {
+    this.fills += 1;
     if (this.spendsBudget) this.remainingBudget -= mulDown(price, quantity);
     else this.remainingQuantity -= quantity;
   }

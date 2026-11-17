@@ -184,6 +184,21 @@ describe('credential guessing', () => {
     expect((await attempt('correct horse battery staple')).status).toBe(429);
   });
 
+  // Regression: the lockout read the counter before writing it, so a
+  // concurrent burst all saw zero failures and got through.
+  it('counts concurrent guesses atomically', async () => {
+    const victim = await Trader.create('burst');
+    const statuses = await Promise.all(
+      Array.from({ length: 30 }, (_, i) =>
+        call('POST', '/v1/auth/login', {
+          body: { email: victim.email, password: `burst-guess-${String(i)}` },
+        }).then((r) => r.status),
+      ),
+    );
+
+    expect(statuses.filter((status) => status !== 429).length).toBeLessThanOrEqual(10);
+  });
+
   it('keys the per-IP limit on the real client, not a spoofed X-Forwarded-For', async () => {
     const statuses = await Promise.all(
       Array.from({ length: 150 }, (_, i) =>

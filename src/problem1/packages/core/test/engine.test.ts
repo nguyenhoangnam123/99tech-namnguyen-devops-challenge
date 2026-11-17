@@ -145,6 +145,35 @@ describe('MatchingEngine', () => {
     expect(engine.depth(5).asks).toEqual([[amt('101'), amt('1')]]);
   });
 
+  it('caps fills per command and expires the rest instead of resting a crossing order', () => {
+    const capped = new MatchingEngine(BTC, 3);
+    for (let i = 0; i < 5; i++)
+      capped.handle(limit({ user: `m${String(i)}`, side: 'SELL', price: '100', quantity: '1' }));
+    const taker = limit({ user: 't', side: 'BUY', price: '100', quantity: '5' });
+
+    const events = capped.handle(taker);
+
+    expect(only(events, 'TRADE')).toHaveLength(3);
+    expect(only(events, 'ORDER_DONE').at(-1)).toMatchObject({
+      orderId: taker.orderId,
+      status: 'EXPIRED',
+      reason: 'FILL_LIMIT',
+    });
+    expect(capped.depth(5)).toEqual({ bids: [], asks: [[amt('100'), amt('2')]] });
+  });
+
+  it('expires a market buy whose budget cannot buy a single lot', () => {
+    engine.handle(limit({ user: 'a', side: 'SELL', price: '100000', quantity: '1' }));
+    const taker = marketBuy('b', '0.5');
+
+    const events = engine.handle(taker);
+
+    expect(only(events, 'TRADE')).toHaveLength(0);
+    expect(only(events, 'ORDER_DONE')).toMatchObject([
+      { status: 'EXPIRED', reason: 'NO_LIQUIDITY' },
+    ]);
+  });
+
   it('cancels a resting order for its owner only', () => {
     const order = limit({ user: 'a', side: 'BUY', price: '100', quantity: '1' });
     engine.handle(order);

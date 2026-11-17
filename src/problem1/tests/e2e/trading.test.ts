@@ -145,6 +145,7 @@ describe('trading', () => {
 
     expect(await buyer.orderWhen(order.body.orderId, ['EXPIRED'])).toMatchObject({
       filledQuantity: '0',
+      doneReason: 'IOC_REMAINDER',
     });
     expect(await buyer.balance('USDT')).toMatchObject({ available: `${price}`, held: '0' });
   });
@@ -170,6 +171,7 @@ describe('trading', () => {
 
     expect(await both.orderWhen(bid.body.orderId, ['EXPIRED'])).toMatchObject({
       filledQuantity: '0',
+      doneReason: 'SELF_TRADE',
     });
     expect((await both.order(ask.body.orderId)).body.status).toBe('NEW');
   });

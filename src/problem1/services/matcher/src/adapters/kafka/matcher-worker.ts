@@ -1,13 +1,13 @@
 import { randomUUID } from 'node:crypto';
-import { decodeCommand, encodeEventBatch } from '@exchange/codecs';
+import { decodeCommand } from '@exchange/codecs';
 import { TOPICS } from '@exchange/contracts';
 import {
   type Admin,
   type Consumer,
   Counter,
-  type EachBatchPayload,
   Histogram,
   type Kafka,
+  type KafkaMessage,
   LATENCY_BUCKETS,
   type Logger,
   type Producer,
@@ -15,6 +15,7 @@ import {
   createConsumer,
 } from '@exchange/platform';
 import type { Matcher } from '../../app/matcher.js';
+import { CommandBatchProcessor } from './batch-processor.js';
 
 export const MATCHER_GROUP = 'matcher';
 
@@ -28,10 +29,11 @@ export class MatcherWorker {
   private ready = false;
   private readonly commands: Counter;
   private readonly latency: Histogram;
+  private readonly processor: CommandBatchProcessor;
 
   constructor(
     private readonly kafka: Kafka,
-    private readonly producer: Producer,
+    producer: Producer,
     private readonly matcher: Matcher,
     private readonly onFatal: (error: unknown) => void,
     private readonly logger: Logger,
@@ -49,10 +51,18 @@ export class MatcherWorker {
       buckets: LATENCY_BUCKETS,
       registers: [registry],
     });
+    this.processor = new CommandBatchProcessor(producer, matcher, {
+      commandProcessed: (issuedAt) => {
+        this.latency.observe((Date.now() - Date.parse(issuedAt)) / 1000);
+      },
+      batchCommitted: (size) => {
+        this.commands.inc({ mode: 'live' }, size);
+      },
+    });
   }
 
   isReady(): boolean {
-    return this.ready;
+    return this.ready && !this.processor.halted;
   }
 
   async start(): Promise<void> {
@@ -82,70 +92,57 @@ export class MatcherWorker {
     });
     await replayer.connect();
     await replayer.subscribe({ topics: [TOPICS.orderCommands] });
-    await new Promise<void>((resolve, reject) => {
-      replayer
-        .run({
-          eachBatch: async ({ batch }) => {
-            const target = pending.get(batch.partition);
-            for (const message of batch.messages) {
-              if (target === undefined || BigInt(message.offset) >= target) break;
-              if (message.value) this.matcher.handle(decodeCommand(message.value));
-              this.commands.inc({ mode: 'replay' });
-              if (BigInt(message.offset) + 1n >= target) pending.delete(batch.partition);
-            }
-            if (pending.size === 0) resolve();
-            await Promise.resolve();
-          },
-        })
-        .catch(reject);
-    });
-    await replayer.disconnect();
+    try {
+      await new Promise<void>((resolve, reject) => {
+        replayer
+          .run({
+            eachBatch: async ({ batch }) => {
+              try {
+                this.replayBatch(pending, batch.partition, batch.messages);
+              } catch (error) {
+                reject(error instanceof Error ? error : new Error(String(error)));
+              }
+              if (pending.size === 0) resolve();
+              await Promise.resolve();
+            },
+          })
+          .catch(reject);
+      });
+    } finally {
+      await replayer.disconnect();
+    }
     this.logger.info('replay complete');
   }
 
+  // A replay failure must stop startup, not retry the same batch forever.
+  private replayBatch(pending: Offsets, partition: number, messages: KafkaMessage[]): void {
+    const target = pending.get(partition);
+    for (const message of messages) {
+      if (target === undefined || BigInt(message.offset) >= target) return;
+      if (message.value) this.matcher.handle(decodeCommand(message.value));
+      this.commands.inc({ mode: 'replay' });
+      if (BigInt(message.offset) + 1n >= target) pending.delete(partition);
+    }
+  }
+
   private async consume(): Promise<void> {
-    const consumer = createConsumer(this.kafka, { groupId: MATCHER_GROUP });
+    const consumer = createConsumer(this.kafka, {
+      groupId: MATCHER_GROUP,
+      instanceId: 'matcher-0',
+    });
     this.consumer = consumer;
     await consumer.connect();
     await consumer.subscribe({ topics: [TOPICS.orderCommands] });
-    await consumer.run({ eachBatch: (payload) => this.process(consumer, payload) });
-  }
-
-  // Any failure aborts the transaction and stops the process: the books
-  // already advanced in memory, so only a replay can make them consistent.
-  private async process(consumer: Consumer, { batch }: EachBatchPayload): Promise<void> {
-    const last = batch.messages.at(-1);
-    if (!last) return;
-    const transaction = await this.producer.transaction();
-    try {
-      const messages = batch.messages.flatMap((message) => {
-        if (!message.value) return [];
-        const command = decodeCommand(message.value);
-        const events = this.matcher.handle(command);
-        this.latency.observe((Date.now() - Date.parse(command.issuedAt)) / 1000);
-        if (events.length === 0) return [];
-        const value = Buffer.from(
-          encodeEventBatch({ commandId: command.commandId, symbol: command.symbol, events }),
-        );
-        return [{ key: command.symbol, value, partition: batch.partition }];
-      });
-      if (messages.length > 0) await transaction.send({ topic: TOPICS.matcherEvents, messages });
-      await transaction.sendOffsets({
-        consumer,
-        topics: [
-          {
-            topic: batch.topic,
-            partitions: [{ partition: batch.partition, offset: String(BigInt(last.offset) + 1n) }],
-          },
-        ],
-      });
-      await transaction.commit();
-      this.commands.inc({ mode: 'live' }, batch.messages.length);
-    } catch (error) {
-      await transaction.abort().catch(() => undefined);
-      this.onFatal(error);
-      throw error;
-    }
+    await consumer.run({
+      eachBatch: async (payload) => {
+        try {
+          await this.processor.process(consumer, payload);
+        } catch (error) {
+          this.onFatal(error);
+          throw error;
+        }
+      },
+    });
   }
 }
 

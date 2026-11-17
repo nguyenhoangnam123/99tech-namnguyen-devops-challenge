@@ -32,6 +32,8 @@ export function toMarketDto(market: Market): Schemas['Market'] {
     tickSize: formatAmount(market.tickSize),
     lotSize: formatAmount(market.lotSize),
     minNotional: formatAmount(market.minNotional),
+    maxPrice: formatAmount(market.maxPrice),
+    maxQuantity: formatAmount(market.maxQuantity),
     makerFeeRate: formatAmount(market.makerFeeRate),
     takerFeeRate: formatAmount(market.takerFeeRate),
   };

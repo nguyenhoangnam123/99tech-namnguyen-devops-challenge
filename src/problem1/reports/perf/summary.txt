@@ -1,0 +1,487 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: /scripts/load.js
+        output: -
+
+     scenarios: (100.00%) 7 scenarios, 950 max VUs, 1m0s max duration (incl. graceful stop):
+              * balances: 50.00 iterations/s for 30s (maxVUs: 13-100, exec: readBalances, gracefulStop: 30s)
+              * cancel: 25.00 iterations/s for 30s (maxVUs: 7-50, exec: cancelOne, gracefulStop: 30s)
+              * depth: 125.00 iterations/s for 30s (maxVUs: 32-250, exec: readDepth, gracefulStop: 30s)
+              * open_orders: 50.00 iterations/s for 30s (maxVUs: 13-100, exec: readOpenOrders, gracefulStop: 30s)
+              * place: 125.00 iterations/s for 30s (maxVUs: 32-250, exec: placeOrder, gracefulStop: 30s)
+              * ticker: 50.00 iterations/s for 30s (maxVUs: 13-100, exec: readTicker, gracefulStop: 30s)
+              * trades: 50.00 iterations/s for 30s (maxVUs: 13-100, exec: readTrades, gracefulStop: 30s)
+
+
+Run           [ 100% ] setup()
+balances      [   0% ]
+cancel        [   0% ]
+depth         [   0% ]
+open_orders   [   0% ]
+place         [   0% ]
+ticker        [   0% ]
+trades        [   0% ]
+
+Run           [ 100% ] setup()
+balances      [   0% ]
+cancel        [   0% ]
+depth         [   0% ]
+open_orders   [   0% ]
+place         [   0% ]
+ticker        [   0% ]
+trades        [   0% ]
+
+Run           [ 100% ] setup()
+balances      [   0% ]
+cancel        [   0% ]
+depth         [   0% ]
+open_orders   [   0% ]
+place         [   0% ]
+ticker        [   0% ]
+trades        [   0% ]
+
+Run           [ 100% ] setup()
+balances      [   0% ]
+cancel        [   0% ]
+depth         [   0% ]
+open_orders   [   0% ]
+place         [   0% ]
+ticker        [   0% ]
+trades        [   0% ]
+
+Run           [ 100% ] setup()
+balances      [   0% ]
+cancel        [   0% ]
+depth         [   0% ]
+open_orders   [   0% ]
+place         [   0% ]
+ticker        [   0% ]
+trades        [   0% ]
+
+Run           [ 100% ] setup()
+balances      [   0% ]
+cancel        [   0% ]
+depth         [   0% ]
+open_orders   [   0% ]
+place         [   0% ]
+ticker        [   0% ]
+trades        [   0% ]
+
+Run           [ 100% ] setup()
+balances      [   0% ]
+cancel        [   0% ]
+depth         [   0% ]
+open_orders   [   0% ]
+place         [   0% ]
+ticker        [   0% ]
+trades        [   0% ]
+
+Run           [ 100% ] setup()
+balances      [   0% ]
+cancel        [   0% ]
+depth         [   0% ]
+open_orders   [   0% ]
+place         [   0% ]
+ticker        [   0% ]
+trades        [   0% ]
+
+Run           [ 100% ] setup()
+balances      [   0% ]
+cancel        [   0% ]
+depth         [   0% ]
+open_orders   [   0% ]
+place         [   0% ]
+ticker        [   0% ]
+trades        [   0% ]
+
+Run           [ 100% ] setup()
+balances      [   0% ]
+cancel        [   0% ]
+depth         [   0% ]
+open_orders   [   0% ]
+place         [   0% ]
+ticker        [   0% ]
+trades        [   0% ]
+
+Run           [ 100% ] setup()
+balances      [   0% ]
+cancel        [   0% ]
+depth         [   0% ]
+open_orders   [   0% ]
+place         [   0% ]
+ticker        [   0% ]
+trades        [   0% ]
+
+Run           [ 100% ] setup()
+balances      [   0% ]
+cancel        [   0% ]
+depth         [   0% ]
+open_orders   [   0% ]
+place         [   0% ]
+ticker        [   0% ]
+trades        [   0% ]
+
+Run           [ 100% ] setup()
+balances      [   0% ]
+cancel        [   0% ]
+depth         [   0% ]
+open_orders   [   0% ]
+place         [   0% ]
+ticker        [   0% ]
+trades        [   0% ]
+
+Run           [ 100% ] setup()
+balances      [   0% ]
+cancel        [   0% ]
+depth         [   0% ]
+open_orders   [   0% ]
+place         [   0% ]
+ticker        [   0% ]
+trades        [   0% ]
+
+running (0m14.9s), 000/123 VUs, 171 complete and 0 interrupted iterations
+balances      [   1% ] 000/013 VUs  00.4s/30s  50.00 iters/s
+cancel        [   1% ] 00/07 VUs    00.4s/30s  25.00 iters/s
+depth         [   1% ] 000/032 VUs  00.4s/30s  125.00 iters/s
+open_orders   [   1% ] 000/013 VUs  00.4s/30s  50.00 iters/s
+place         [   1% ] 000/032 VUs  00.4s/30s  125.00 iters/s
+ticker        [   1% ] 000/013 VUs  00.4s/30s  50.00 iters/s
+trades        [   1% ] 000/013 VUs  00.4s/30s  50.00 iters/s
+
+running (0m15.9s), 000/123 VUs, 646 complete and 0 interrupted iterations
+balances      [   5% ] 000/013 VUs  01.4s/30s  50.00 iters/s
+cancel        [   5% ] 00/07 VUs    01.4s/30s  25.00 iters/s
+depth         [   5% ] 000/032 VUs  01.4s/30s  125.00 iters/s
+open_orders   [   5% ] 000/013 VUs  01.4s/30s  50.00 iters/s
+place         [   5% ] 000/032 VUs  01.4s/30s  125.00 iters/s
+ticker        [   5% ] 000/013 VUs  01.4s/30s  50.00 iters/s
+trades        [   5% ] 000/013 VUs  01.4s/30s  50.00 iters/s
+
+running (0m16.9s), 001/123 VUs, 1120 complete and 0 interrupted iterations
+balances      [   8% ] 000/013 VUs  02.4s/30s  50.00 iters/s
+cancel        [   8% ] 00/07 VUs    02.4s/30s  25.00 iters/s
+depth         [   8% ] 000/032 VUs  02.4s/30s  125.00 iters/s
+open_orders   [   8% ] 000/013 VUs  02.4s/30s  50.00 iters/s
+place         [   8% ] 001/032 VUs  02.4s/30s  125.00 iters/s
+ticker        [   8% ] 000/013 VUs  02.4s/30s  50.00 iters/s
+trades        [   8% ] 000/013 VUs  02.4s/30s  50.00 iters/s
+
+running (0m17.9s), 007/123 VUs, 1589 complete and 0 interrupted iterations
+balances      [  11% ] 000/013 VUs  03.4s/30s  50.00 iters/s
+cancel        [  11% ] 00/07 VUs    03.4s/30s  25.00 iters/s
+depth         [  11% ] 001/032 VUs  03.4s/30s  125.00 iters/s
+open_orders   [  11% ] 000/013 VUs  03.4s/30s  50.00 iters/s
+place         [  11% ] 006/032 VUs  03.4s/30s  125.00 iters/s
+ticker        [  11% ] 000/013 VUs  03.4s/30s  50.00 iters/s
+trades        [  11% ] 000/013 VUs  03.4s/30s  50.00 iters/s
+
+running (0m18.9s), 001/127 VUs, 2066 complete and 0 interrupted iterations
+balances      [  15% ] 000/013 VUs  04.4s/30s  50.00 iters/s
+cancel        [  15% ] 00/07 VUs    04.4s/30s  25.00 iters/s
+depth         [  15% ] 000/032 VUs  04.4s/30s  125.00 iters/s
+open_orders   [  15% ] 000/013 VUs  04.4s/30s  50.00 iters/s
+place         [  15% ] 001/036 VUs  04.4s/30s  125.00 iters/s
+ticker        [  15% ] 000/013 VUs  04.4s/30s  50.00 iters/s
+trades        [  15% ] 000/013 VUs  04.4s/30s  50.00 iters/s
+
+running (0m19.9s), 000/127 VUs, 2542 complete and 0 interrupted iterations
+balances      [  18% ] 000/013 VUs  05.4s/30s  50.00 iters/s
+cancel        [  18% ] 00/07 VUs    05.4s/30s  25.00 iters/s
+depth         [  18% ] 000/032 VUs  05.4s/30s  125.00 iters/s
+open_orders   [  18% ] 000/013 VUs  05.4s/30s  50.00 iters/s
+place         [  18% ] 000/036 VUs  05.4s/30s  125.00 iters/s
+ticker        [  18% ] 000/013 VUs  05.4s/30s  50.00 iters/s
+trades        [  18% ] 000/013 VUs  05.4s/30s  50.00 iters/s
+
+running (0m20.9s), 001/127 VUs, 3016 complete and 0 interrupted iterations
+balances      [  21% ] 000/013 VUs  06.4s/30s  50.00 iters/s
+cancel        [  21% ] 00/07 VUs    06.4s/30s  25.00 iters/s
+depth         [  21% ] 000/032 VUs  06.4s/30s  125.00 iters/s
+open_orders   [  21% ] 000/013 VUs  06.4s/30s  50.00 iters/s
+place         [  21% ] 001/036 VUs  06.4s/30s  125.00 iters/s
+ticker        [  21% ] 000/013 VUs  06.4s/30s  50.00 iters/s
+trades        [  21% ] 000/013 VUs  06.4s/30s  50.00 iters/s
+
+running (0m21.9s), 001/127 VUs, 3491 complete and 0 interrupted iterations
+balances      [  25% ] 000/013 VUs  07.4s/30s  50.00 iters/s
+cancel        [  25% ] 00/07 VUs    07.4s/30s  25.00 iters/s
+depth         [  25% ] 000/032 VUs  07.4s/30s  125.00 iters/s
+open_orders   [  25% ] 000/013 VUs  07.4s/30s  50.00 iters/s
+place         [  25% ] 001/036 VUs  07.4s/30s  125.00 iters/s
+ticker        [  25% ] 000/013 VUs  07.4s/30s  50.00 iters/s
+trades        [  25% ] 000/013 VUs  07.4s/30s  50.00 iters/s
+
+running (0m22.9s), 000/127 VUs, 3967 complete and 0 interrupted iterations
+balances      [  28% ] 000/013 VUs  08.4s/30s  50.00 iters/s
+cancel        [  28% ] 00/07 VUs    08.4s/30s  25.00 iters/s
+depth         [  28% ] 000/032 VUs  08.4s/30s  125.00 iters/s
+open_orders   [  28% ] 000/013 VUs  08.4s/30s  50.00 iters/s
+place         [  28% ] 000/036 VUs  08.4s/30s  125.00 iters/s
+ticker        [  28% ] 000/013 VUs  08.4s/30s  50.00 iters/s
+trades        [  28% ] 000/013 VUs  08.4s/30s  50.00 iters/s
+
+running (0m23.9s), 001/127 VUs, 4441 complete and 0 interrupted iterations
+balances      [  31% ] 000/013 VUs  09.4s/30s  50.00 iters/s
+cancel        [  31% ] 00/07 VUs    09.4s/30s  25.00 iters/s
+depth         [  31% ] 000/032 VUs  09.4s/30s  125.00 iters/s
+open_orders   [  31% ] 000/013 VUs  09.4s/30s  50.00 iters/s
+place         [  31% ] 001/036 VUs  09.4s/30s  125.00 iters/s
+ticker        [  31% ] 000/013 VUs  09.4s/30s  50.00 iters/s
+trades        [  31% ] 000/013 VUs  09.4s/30s  50.00 iters/s
+
+running (0m24.9s), 002/127 VUs, 4915 complete and 0 interrupted iterations
+balances      [  35% ] 000/013 VUs  10.4s/30s  50.00 iters/s
+cancel        [  35% ] 00/07 VUs    10.4s/30s  25.00 iters/s
+depth         [  35% ] 001/032 VUs  10.4s/30s  125.00 iters/s
+open_orders   [  35% ] 000/013 VUs  10.4s/30s  50.00 iters/s
+place         [  35% ] 001/036 VUs  10.4s/30s  125.00 iters/s
+ticker        [  35% ] 000/013 VUs  10.4s/30s  50.00 iters/s
+trades        [  35% ] 000/013 VUs  10.4s/30s  50.00 iters/s
+
+running (0m25.9s), 001/127 VUs, 5391 complete and 0 interrupted iterations
+balances      [  38% ] 000/013 VUs  11.4s/30s  50.00 iters/s
+cancel        [  38% ] 00/07 VUs    11.4s/30s  25.00 iters/s
+depth         [  38% ] 000/032 VUs  11.4s/30s  125.00 iters/s
+open_orders   [  38% ] 000/013 VUs  11.4s/30s  50.00 iters/s
+place         [  38% ] 001/036 VUs  11.4s/30s  125.00 iters/s
+ticker        [  38% ] 000/013 VUs  11.4s/30s  50.00 iters/s
+trades        [  38% ] 000/013 VUs  11.4s/30s  50.00 iters/s
+
+running (0m26.9s), 000/127 VUs, 5867 complete and 0 interrupted iterations
+balances      [  41% ] 000/013 VUs  12.4s/30s  50.00 iters/s
+cancel        [  41% ] 00/07 VUs    12.4s/30s  25.00 iters/s
+depth         [  41% ] 000/032 VUs  12.4s/30s  125.00 iters/s
+open_orders   [  41% ] 000/013 VUs  12.4s/30s  50.00 iters/s
+place         [  41% ] 000/036 VUs  12.4s/30s  125.00 iters/s
+ticker        [  41% ] 000/013 VUs  12.4s/30s  50.00 iters/s
+trades        [  41% ] 000/013 VUs  12.4s/30s  50.00 iters/s
+
+running (0m27.9s), 001/127 VUs, 6341 complete and 0 interrupted iterations
+balances      [  45% ] 000/013 VUs  13.4s/30s  50.00 iters/s
+cancel        [  45% ] 00/07 VUs    13.4s/30s  25.00 iters/s
+depth         [  45% ] 000/032 VUs  13.4s/30s  125.00 iters/s
+open_orders   [  45% ] 000/013 VUs  13.4s/30s  50.00 iters/s
+place         [  45% ] 001/036 VUs  13.4s/30s  125.00 iters/s
+ticker        [  45% ] 000/013 VUs  13.4s/30s  50.00 iters/s
+trades        [  45% ] 000/013 VUs  13.4s/30s  50.00 iters/s
+
+running (0m28.9s), 000/127 VUs, 6817 complete and 0 interrupted iterations
+balances      [  48% ] 000/013 VUs  14.4s/30s  50.00 iters/s
+cancel        [  48% ] 00/07 VUs    14.4s/30s  25.00 iters/s
+depth         [  48% ] 000/032 VUs  14.4s/30s  125.00 iters/s
+open_orders   [  48% ] 000/013 VUs  14.4s/30s  50.00 iters/s
+place         [  48% ] 000/036 VUs  14.4s/30s  125.00 iters/s
+ticker        [  48% ] 000/013 VUs  14.4s/30s  50.00 iters/s
+trades        [  48% ] 000/013 VUs  14.4s/30s  50.00 iters/s
+
+running (0m29.9s), 001/127 VUs, 7291 complete and 0 interrupted iterations
+balances      [  51% ] 000/013 VUs  15.4s/30s  50.00 iters/s
+cancel        [  51% ] 00/07 VUs    15.4s/30s  25.00 iters/s
+depth         [  51% ] 000/032 VUs  15.4s/30s  125.00 iters/s
+open_orders   [  51% ] 000/013 VUs  15.4s/30s  50.00 iters/s
+place         [  51% ] 001/036 VUs  15.4s/30s  125.00 iters/s
+ticker        [  51% ] 000/013 VUs  15.4s/30s  50.00 iters/s
+trades        [  51% ] 000/013 VUs  15.4s/30s  50.00 iters/s
+
+running (0m30.9s), 000/127 VUs, 7767 complete and 0 interrupted iterations
+balances      [  55% ] 000/013 VUs  16.4s/30s  50.00 iters/s
+cancel        [  55% ] 00/07 VUs    16.4s/30s  25.00 iters/s
+depth         [  55% ] 000/032 VUs  16.4s/30s  125.00 iters/s
+open_orders   [  55% ] 000/013 VUs  16.4s/30s  50.00 iters/s
+place         [  55% ] 000/036 VUs  16.4s/30s  125.00 iters/s
+ticker        [  55% ] 000/013 VUs  16.4s/30s  50.00 iters/s
+trades        [  55% ] 000/013 VUs  16.4s/30s  50.00 iters/s
+
+running (0m31.9s), 001/127 VUs, 8241 complete and 0 interrupted iterations
+balances      [  58% ] 000/013 VUs  17.4s/30s  50.00 iters/s
+cancel        [  58% ] 00/07 VUs    17.4s/30s  25.00 iters/s
+depth         [  58% ] 000/032 VUs  17.4s/30s  125.00 iters/s
+open_orders   [  58% ] 000/013 VUs  17.4s/30s  50.00 iters/s
+place         [  58% ] 001/036 VUs  17.4s/30s  125.00 iters/s
+ticker        [  58% ] 000/013 VUs  17.4s/30s  50.00 iters/s
+trades        [  58% ] 000/013 VUs  17.4s/30s  50.00 iters/s
+
+running (0m32.9s), 001/127 VUs, 8716 complete and 0 interrupted iterations
+balances      [  61% ] 000/013 VUs  18.4s/30s  50.00 iters/s
+cancel        [  61% ] 00/07 VUs    18.4s/30s  25.00 iters/s
+depth         [  61% ] 000/032 VUs  18.4s/30s  125.00 iters/s
+open_orders   [  61% ] 000/013 VUs  18.4s/30s  50.00 iters/s
+place         [  61% ] 001/036 VUs  18.4s/30s  125.00 iters/s
+ticker        [  61% ] 000/013 VUs  18.4s/30s  50.00 iters/s
+trades        [  61% ] 000/013 VUs  18.4s/30s  50.00 iters/s
+
+running (0m33.9s), 003/127 VUs, 9189 complete and 0 interrupted iterations
+balances      [  65% ] 000/013 VUs  19.4s/30s  50.00 iters/s
+cancel        [  65% ] 00/07 VUs    19.4s/30s  25.00 iters/s
+depth         [  65% ] 001/032 VUs  19.4s/30s  125.00 iters/s
+open_orders   [  65% ] 000/013 VUs  19.4s/30s  50.00 iters/s
+place         [  65% ] 002/036 VUs  19.4s/30s  125.00 iters/s
+ticker        [  65% ] 000/013 VUs  19.4s/30s  50.00 iters/s
+trades        [  65% ] 000/013 VUs  19.4s/30s  50.00 iters/s
+
+running (0m34.9s), 002/127 VUs, 9665 complete and 0 interrupted iterations
+balances      [  68% ] 000/013 VUs  20.4s/30s  50.00 iters/s
+cancel        [  68% ] 00/07 VUs    20.4s/30s  25.00 iters/s
+depth         [  68% ] 001/032 VUs  20.4s/30s  125.00 iters/s
+open_orders   [  68% ] 000/013 VUs  20.4s/30s  50.00 iters/s
+place         [  68% ] 001/036 VUs  20.4s/30s  125.00 iters/s
+ticker        [  68% ] 000/013 VUs  20.4s/30s  50.00 iters/s
+trades        [  68% ] 000/013 VUs  20.4s/30s  50.00 iters/s
+
+running (0m35.9s), 001/127 VUs, 10141 complete and 0 interrupted iterations
+balances      [  71% ] 000/013 VUs  21.4s/30s  50.00 iters/s
+cancel        [  71% ] 00/07 VUs    21.4s/30s  25.00 iters/s
+depth         [  71% ] 000/032 VUs  21.4s/30s  125.00 iters/s
+open_orders   [  71% ] 000/013 VUs  21.4s/30s  50.00 iters/s
+place         [  71% ] 001/036 VUs  21.4s/30s  125.00 iters/s
+ticker        [  71% ] 000/013 VUs  21.4s/30s  50.00 iters/s
+trades        [  71% ] 000/013 VUs  21.4s/30s  50.00 iters/s
+
+running (0m36.9s), 001/127 VUs, 10616 complete and 0 interrupted iterations
+balances      [  75% ] 000/013 VUs  22.4s/30s  50.00 iters/s
+cancel        [  75% ] 00/07 VUs    22.4s/30s  25.00 iters/s
+depth         [  75% ] 000/032 VUs  22.4s/30s  125.00 iters/s
+open_orders   [  75% ] 000/013 VUs  22.4s/30s  50.00 iters/s
+place         [  75% ] 001/036 VUs  22.4s/30s  125.00 iters/s
+ticker        [  75% ] 000/013 VUs  22.4s/30s  50.00 iters/s
+trades        [  75% ] 000/013 VUs  22.4s/30s  50.00 iters/s
+
+running (0m37.9s), 000/127 VUs, 11092 complete and 0 interrupted iterations
+balances      [  78% ] 000/013 VUs  23.4s/30s  50.00 iters/s
+cancel        [  78% ] 00/07 VUs    23.4s/30s  25.00 iters/s
+depth         [  78% ] 000/032 VUs  23.4s/30s  125.00 iters/s
+open_orders   [  78% ] 000/013 VUs  23.4s/30s  50.00 iters/s
+place         [  78% ] 000/036 VUs  23.4s/30s  125.00 iters/s
+ticker        [  78% ] 000/013 VUs  23.4s/30s  50.00 iters/s
+trades        [  78% ] 000/013 VUs  23.4s/30s  50.00 iters/s
+
+running (0m38.9s), 000/127 VUs, 11567 complete and 0 interrupted iterations
+balances      [  81% ] 000/013 VUs  24.4s/30s  50.00 iters/s
+cancel        [  81% ] 00/07 VUs    24.4s/30s  25.00 iters/s
+depth         [  81% ] 000/032 VUs  24.4s/30s  125.00 iters/s
+open_orders   [  81% ] 000/013 VUs  24.4s/30s  50.00 iters/s
+place         [  81% ] 000/036 VUs  24.4s/30s  125.00 iters/s
+ticker        [  81% ] 000/013 VUs  24.4s/30s  50.00 iters/s
+trades        [  81% ] 000/013 VUs  24.4s/30s  50.00 iters/s
+
+running (0m39.9s), 013/127 VUs, 12029 complete and 0 interrupted iterations
+balances      [  85% ] 000/013 VUs  25.4s/30s  50.00 iters/s
+cancel        [  85% ] 01/07 VUs    25.4s/30s  25.00 iters/s
+depth         [  85% ] 003/032 VUs  25.4s/30s  125.00 iters/s
+open_orders   [  85% ] 001/013 VUs  25.4s/30s  50.00 iters/s
+place         [  85% ] 006/036 VUs  25.4s/30s  125.00 iters/s
+ticker        [  85% ] 001/013 VUs  25.4s/30s  50.00 iters/s
+trades        [  85% ] 001/013 VUs  25.4s/30s  50.00 iters/s
+
+running (0m40.9s), 021/135 VUs, 12485 complete and 0 interrupted iterations
+balances      [  88% ] 001/013 VUs  26.4s/30s  50.00 iters/s
+cancel        [  88% ] 03/09 VUs    26.4s/30s  25.00 iters/s
+depth         [  88% ] 000/032 VUs  26.4s/30s  125.00 iters/s
+open_orders   [  88% ] 000/013 VUs  26.4s/30s  50.00 iters/s
+place         [  88% ] 017/042 VUs  26.4s/30s  125.00 iters/s
+ticker        [  88% ] 000/013 VUs  26.4s/30s  50.00 iters/s
+trades        [  88% ] 000/013 VUs  26.4s/30s  50.00 iters/s
+
+running (0m41.9s), 000/135 VUs, 12981 complete and 0 interrupted iterations
+balances      [  91% ] 000/013 VUs  27.4s/30s  50.00 iters/s
+cancel        [  91% ] 00/09 VUs    27.4s/30s  25.00 iters/s
+depth         [  91% ] 000/032 VUs  27.4s/30s  125.00 iters/s
+open_orders   [  91% ] 000/013 VUs  27.4s/30s  50.00 iters/s
+place         [  91% ] 000/042 VUs  27.4s/30s  125.00 iters/s
+ticker        [  91% ] 000/013 VUs  27.4s/30s  50.00 iters/s
+trades        [  91% ] 000/013 VUs  27.4s/30s  50.00 iters/s
+
+running (0m42.9s), 000/135 VUs, 13456 complete and 0 interrupted iterations
+balances      [  95% ] 000/013 VUs  28.4s/30s  50.00 iters/s
+cancel        [  95% ] 00/09 VUs    28.4s/30s  25.00 iters/s
+depth         [  95% ] 000/032 VUs  28.4s/30s  125.00 iters/s
+open_orders   [  95% ] 000/013 VUs  28.4s/30s  50.00 iters/s
+place         [  95% ] 000/042 VUs  28.4s/30s  125.00 iters/s
+ticker        [  95% ] 000/013 VUs  28.4s/30s  50.00 iters/s
+trades        [  95% ] 000/013 VUs  28.4s/30s  50.00 iters/s
+
+running (0m43.9s), 001/135 VUs, 13930 complete and 0 interrupted iterations
+balances      [  98% ] 000/013 VUs  29.4s/30s  50.00 iters/s
+cancel        [  98% ] 00/09 VUs    29.4s/30s  25.00 iters/s
+depth         [  98% ] 000/032 VUs  29.4s/30s  125.00 iters/s
+open_orders   [  98% ] 000/013 VUs  29.4s/30s  50.00 iters/s
+place         [  98% ] 001/042 VUs  29.4s/30s  125.00 iters/s
+ticker        [  98% ] 000/013 VUs  29.4s/30s  50.00 iters/s
+trades        [  98% ] 000/013 VUs  29.4s/30s  50.00 iters/s
+
+
+  █ THRESHOLDS 
+
+    checks
+    ✓ 'rate>0.999' rate=100.00%
+
+    http_req_duration{phase:load}
+    ✗ 'p(99)<100' p(99)=143.85ms
+
+    http_req_duration{scenario:balances}
+    ✓ 'p(99)<100' p(99)=94.75ms
+
+    http_req_duration{scenario:depth}
+    ✓ 'p(99)<100' p(99)=89.71ms
+
+    http_req_duration{scenario:place}
+    ✗ 'p(99)<100' p(99)=272.29ms
+
+    http_req_failed{phase:load}
+    ✓ 'rate<0.001' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 14234   319.423446/s
+    checks_succeeded...: 100.00% 14234 out of 14234
+    checks_failed......: 0.00%   0 out of 14234
+
+    ✓ ticker 200
+    ✓ trades 200
+    ✓ balances 200
+    ✓ orders 200
+    ✓ depth 200
+    ✓ order accepted
+    ✓ cancel accepted
+
+    HTTP
+    http_req_duration..............: avg=8.08ms p(50)=2.04ms p(95)=24.29ms p(99)=163.93ms max=444.99ms
+      { expected_response:true }...: avg=8.08ms p(50)=2.04ms p(95)=24.29ms p(99)=163.93ms max=444.99ms
+      { phase:load }...............: avg=7.28ms p(50)=1.99ms p(95)=21.52ms p(99)=143.85ms max=444.99ms
+      { scenario:balances }........: avg=5.45ms p(50)=1.48ms p(95)=20.23ms p(99)=94.75ms  max=218.3ms 
+      { scenario:depth }...........: avg=4.78ms p(50)=1.45ms p(95)=11.54ms p(99)=89.71ms  max=283.21ms
+      { scenario:place }...........: avg=13.7ms p(50)=3.8ms  p(95)=45.86ms p(99)=272.29ms max=444.99ms
+    http_req_failed................: 0.00%  0 out of 15303
+      { phase:load }...............: 0.00%  0 out of 14983
+    http_reqs......................: 15303  343.412743/s
+
+    EXECUTION
+    dropped_iterations.............: 15     0.336613/s
+    iteration_duration.............: avg=7.85ms p(50)=2.22ms p(95)=22.47ms p(99)=154.07ms max=446.02ms
+    iterations.....................: 14242  319.602973/s
+    vus............................: 1      min=0          max=22 
+    vus_max........................: 135    min=123        max=135
+
+    NETWORK
+    data_received..................: 32 MB  715 kB/s
+    data_sent......................: 5.7 MB 128 kB/s
+
+
+
+
+running (0m44.6s), 000/135 VUs, 14242 complete and 0 interrupted iterations
+balances    ✓ [ 100% ] 000/013 VUs  30s  50.00 iters/s
+cancel      ✓ [ 100% ] 00/09 VUs    30s  25.00 iters/s
+depth       ✓ [ 100% ] 000/032 VUs  30s  125.00 iters/s
+open_orders ✓ [ 100% ] 000/013 VUs  30s  50.00 iters/s
+place       ✓ [ 100% ] 000/042 VUs  30s  125.00 iters/s
+ticker      ✓ [ 100% ] 000/013 VUs  30s  50.00 iters/s
+trades      ✓ [ 100% ] 000/013 VUs  30s  50.00 iters/s

@@ -21,7 +21,10 @@ const accountKey = (owner: string | null, asset: string, kind: string): string =
   `${owner ?? '-'}|${asset}|${kind}`;
 
 export class PgLedgerStore implements LedgerStore {
-  constructor(private readonly trx: Transaction<DB>) {}
+  constructor(
+    private readonly trx: Transaction<DB>,
+    private readonly onRefused: () => void,
+  ) {}
 
   async openUserAccounts(userId: string): Promise<void> {
     await this.trx
@@ -52,8 +55,9 @@ export class PgLedgerStore implements LedgerStore {
           as v(id, delta)
         where accounts.id = v.id`.execute(this.trx);
     } catch (error) {
-      if (pgConstraint(error) === 'accounts_user_non_negative') return 'INSUFFICIENT_FUNDS';
-      throw error;
+      if (pgConstraint(error) !== 'accounts_user_non_negative') throw error;
+      this.onRefused();
+      return 'INSUFFICIENT_FUNDS';
     }
     const journalId = randomUUID();
     await this.trx

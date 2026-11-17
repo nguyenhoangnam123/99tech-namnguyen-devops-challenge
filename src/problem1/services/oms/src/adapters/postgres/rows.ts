@@ -26,6 +26,7 @@ const DONE_REASONS = [
   'IOC_REMAINDER',
   'SELF_TRADE',
   'NO_LIQUIDITY',
+  'FILL_LIMIT',
 ] as const;
 const ROLES = ['MAKER', 'TAKER'] as const;
 const DEPOSIT_STATUSES = ['CREDITED', 'UNMATCHED'] as const;
@@ -43,12 +44,16 @@ export const asAsset = (value: string): Asset => oneOf(ASSETS, value, 'asset');
 
 export function toOrderRecord(row: OrderRow): OrderRecord {
   const side = oneOf<Side>(SIDES, row.side, 'side');
+  const spec = specOf(row, side);
   return {
     orderId: row.id,
     userId: row.user_id,
     clientOrderId: row.client_order_id,
+    symbol: row.symbol,
     side,
-    spec: specOf(row, side),
+    spec,
+    limitPrice: optional(row.price) ?? null,
+    orderQuantity: optional(row.quantity) ?? null,
     reservation: { asset: asAsset(row.reserved_asset), amount: parseAmount(row.reserved) },
     reservedAsset: asAsset(row.reserved_asset),
     reservedRemaining: parseAmount(row.reserved_remaining),

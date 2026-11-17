@@ -1,6 +1,6 @@
 COMPOSE := docker compose --env-file deploy/.env -f deploy/docker-compose.yml
 
-.PHONY: help secrets up down nuke ps logs build lint typecheck test test-integration e2e security perf gen check-gen ab
+.PHONY: help secrets up down nuke ps logs obs build lint typecheck test test-integration e2e chaos security perf gen check-gen ab
 
 help: ## List targets
 	@grep -E '^[a-z0-9-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-18s %s\n", $$1, $$2}'
@@ -41,12 +41,20 @@ test-integration: ## Adapter tests against real Postgres (testcontainers)
 e2e: ## Contract and transaction tests against the running stack
 	npm run test:e2e
 
+chaos: ## Restart matcher and kill settler mid-flow; books and ledger must survive
+	CHAOS=1 npx vitest run --project e2e tests/e2e/resilience.test.ts
+
 security: ## Abuse tests and ZAP API scan against the running stack
 	npm run test:security
 	scripts/zap.sh
 
-perf: ## k6 load test at 500 rps against the running stack
-	$(COMPOSE) run --rm k6 run --summary-export=/reports/perf-summary.json /scripts/load.js
+DURATION ?= 2m
+
+perf: ## k6 load test at 500 rps against the running stack (DURATION=2m)
+	@mkdir -p reports/perf
+	$(COMPOSE) run --rm -e CUSTODY_SECRET="$$(cat deploy/.secrets/custody-webhook-secret)" \
+	  -e DURATION=$(DURATION) k6 run --summary-export=/reports/perf/summary.json /scripts/load.js \
+	  | tee reports/perf/summary.txt
 
 gen: ## Regenerate code from contracts/
 	npm run gen
