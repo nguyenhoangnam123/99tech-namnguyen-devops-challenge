@@ -48,8 +48,27 @@ make up          # builds one image, starts 12 containers, waits until healthy
 make help        # every target
 ```
 
-The API is at `http://127.0.0.1:18080`. `make obs` adds Prometheus (`:19090`) and
-Grafana (`:13000`). `make nuke` removes everything, including data.
+The API is at `http://127.0.0.1:18080`. `make nuke` removes everything, including data.
+How the stack, gates and telemetry fit together, as diagrams:
+[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+
+## Observability and SLOs
+
+```bash
+make up-obs      # the stack plus OTel Collector, node-exporter, Loki, Tempo, Mimir, Grafana
+make slo         # SLO catalog from empty state: p95/p99, CPU and memory per service
+```
+
+- Grafana at `http://127.0.0.1:13000` has two dashboards, _SLO and order pipeline_ and
+  _CPU and memory_, which also covers the Docker VM and the collector itself. Both are built by [deploy/grafana/dashboards.mjs](deploy/grafana/dashboards.mjs);
+  edit it and run `make dashboards`.
+- Services send traces and logs over OTLP to the collector, which also scrapes their
+  `/metrics`, reads Docker stats and scrapes node-exporter for VM stall time. One trace
+  follows an order from the API through Kafka to settlement.
+- Scenarios, windows, sizes and objectives are in
+  [tests/perf/slo/scenarios.json](tests/perf/slo/scenarios.json). The latest run is in
+  [reports/slo/RESULTS.md](reports/slo/RESULTS.md), with every number also in `RESULTS.json`.
+  How runs are kept comparable is in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#7-slo-tests).
 
 ## Tests
 
@@ -62,6 +81,7 @@ Grafana (`:13000`). `make nuke` removes everything, including data.
 | Chaos             | `make chaos`                  | Matcher restart rebuilds the book by replay; a settler SIGKILL mid-flow settles every trade exactly once                                                        |
 | Abuse (pen test)  | `make security`               | IDOR, double spend, idempotency races, JWT forgery, credential guessing, X-Forwarded-For spoofing, injection, oversized input; then an OWASP ZAP API scan       |
 | Load              | `make perf`                   | 500 rps open model; p99 < 100 ms per request                                                                                                                    |
+| SLO catalog       | `make slo`                    | Seven scenarios, each with load, window, size and a p95/p99 objective, reported with CPU and memory per service, pipeline lag and VM stall time                 |
 
 Run order matters only once: the abuse suite spends the per-IP auth budget on purpose,
 and the helpers wait it out.
