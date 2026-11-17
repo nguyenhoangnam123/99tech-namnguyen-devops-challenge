@@ -1,4 +1,5 @@
 import type {
+  AccountRef,
   Amount,
   Asset,
   DoneReason,
@@ -74,6 +75,9 @@ export interface UserStore {
 
 export interface LedgerStore {
   openUserAccounts(userId: string): Promise<void>;
+  // Locks in id order. A transaction posting several journals must lock
+  // every account up front, or it can deadlock with another transaction.
+  lock(accounts: readonly AccountRef[]): Promise<void>;
   // A user balance that would go negative fails the journal. The transaction
   // is then unusable: the caller must return an error so it rolls back.
   post(journal: Journal): Promise<'POSTED' | 'INSUFFICIENT_FUNDS'>;

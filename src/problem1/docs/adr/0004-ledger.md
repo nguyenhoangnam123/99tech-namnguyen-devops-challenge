@@ -10,7 +10,10 @@
   - A deferred constraint trigger refuses to commit an unbalanced journal.
   - `journal_entries` is append-only (update, delete and truncate are rejected).
   - A CHECK keeps user balances non-negative, so concurrent orders cannot overspend.
-- Accounts are locked in id order before posting, so journals cannot deadlock.
+- Every transaction takes all its account locks in one id-ordered statement before
+  posting. Placement locks two accounts; settlement locks every account its batch can
+  touch, up front. Locking per journal deadlocked settlement against new orders: the
+  traders-50 SLO run found it, and an integration test now reproduces it.
 - Settlement re-checks every trade against the orders' own terms (symbol, limit price,
   size) and stops the line instead of moving money on a bad event.
 

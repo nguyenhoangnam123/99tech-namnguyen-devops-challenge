@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Journal, Posting } from '../src/ledger.js';
 import type { TradeEvent } from '../src/matching/messages.js';
 import { InvariantViolation } from '../src/result.js';
-import { closeOrder, type OrderFunds, settleTrade } from '../src/settlement.js';
+import { accountsTouched, closeOrder, type OrderFunds, settleTrade } from '../src/settlement.js';
 import { BTC, amt } from './fixtures.js';
 
 const trade: TradeEvent = {
@@ -161,5 +161,26 @@ describe('closeOrder', () => {
     expect(() => closeOrder({ ...ask, status: 'CANCELLED' }, 'CANCELLED')).toThrow(
       InvariantViolation,
     );
+  });
+});
+
+describe('accountsTouched', () => {
+  it('covers both traders on both assets, plus fees, once each', () => {
+    const done = {
+      kind: 'ORDER_DONE',
+      eventId: 'c:1',
+      symbol: 'BTC-USDT',
+      orderId: 'bid',
+      userId: 'buyer',
+      status: 'FILLED',
+      reason: 'FILLED',
+    } as const;
+
+    const accounts = accountsTouched([trade, done]);
+
+    expect(accounts).toHaveLength(10);
+    expect(accounts).toContainEqual({ owner: 'buyer', asset: 'USDT', kind: 'AVAILABLE' });
+    expect(accounts).toContainEqual({ owner: 'seller', asset: 'BTC', kind: 'HELD' });
+    expect(accounts).toContainEqual({ owner: null, asset: 'USDT', kind: 'FEES' });
   });
 });

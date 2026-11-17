@@ -1,6 +1,7 @@
 import {
   InvariantViolation,
   type MatcherEvent,
+  accountsTouched,
   type OrderDoneEvent,
   type TradeEvent,
   closeOrder,
@@ -28,6 +29,7 @@ export class SettlementService {
   apply(batch: CommandEvents): Promise<'APPLIED' | 'DUPLICATE'> {
     return this.uow.execute(async (tx) => {
       if (!(await tx.inbox.remember(SETTLER_CONSUMER, batch.commandId))) return 'DUPLICATE';
+      await tx.ledger.lock(accountsTouched(batch.events));
       for (const event of batch.events) {
         if (event.kind === 'TRADE') await this.settle(tx, event);
         if (event.kind === 'ORDER_DONE') await this.close(tx, event);

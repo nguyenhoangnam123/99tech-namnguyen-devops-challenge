@@ -31,7 +31,10 @@ let deposits: DepositService;
 let settlement: SettlementService;
 
 beforeAll(async () => {
-  container = await new PostgreSqlContainer('postgres:17.12-alpine').start();
+  // Short deadlock timeout so a lock-order bug fails fast instead of in 1s.
+  container = await new PostgreSqlContainer('postgres:17.12-alpine')
+    .withCommand(['postgres', '-c', 'deadlock_timeout=50ms'])
+    .start();
   database = createDatabase<DB>(
     { url: container.getConnectionUri(), poolSize: 20, applicationName: 'integration' },
     createLogger('integration', 'silent'),
@@ -131,6 +134,60 @@ describe('settlement against Postgres', () => {
       held: 0n,
     });
   });
+});
+
+// Regression: a settlement batch locked the trade's accounts, then the
+// release's, so it took ids out of order and deadlocked with new orders.
+describe('lock ordering under concurrency', () => {
+  it('never deadlocks settlement against new orders from the same traders', async () => {
+    const buyer = await userWith('USDT', '1000000');
+    const seller = await userWith('ETH', '1000');
+    const failures: string[] = [];
+
+    for (let round = 0; round < 60; round++) {
+      const ask = await orders.place(seller, limit('SELL', '100', '1'));
+      const bid = await orders.place(buyer, limit('BUY', '101', '1'));
+      if (!ask.ok || !bid.ok) throw new Error('orders must be accepted');
+      const commandId = randomUUID();
+      const done = (orderId: string, userId: string, n: number): MatcherEvent => ({
+        kind: 'ORDER_DONE',
+        eventId: `${commandId}:${String(n)}`,
+        symbol: 'ETH-USDT',
+        orderId,
+        userId,
+        status: 'FILLED',
+        reason: 'FILLED',
+      });
+      const events: MatcherEvent[] = [
+        {
+          kind: 'TRADE',
+          eventId: `${commandId}:0`,
+          symbol: 'ETH-USDT',
+          price: parseAmount('100'),
+          quantity: parseAmount('1'),
+          takerSide: 'BUY',
+          makerOrderId: ask.value.order.orderId,
+          makerUserId: seller,
+          takerOrderId: bid.value.order.orderId,
+          takerUserId: buyer,
+          executedAt: new Date().toISOString(),
+        },
+        done(ask.value.order.orderId, seller, 1),
+        done(bid.value.order.orderId, buyer, 2),
+      ];
+
+      const outcomes = await Promise.allSettled([
+        settlement.apply({ commandId, events }),
+        orders.place(buyer, limit('BUY', '50', '0.1')),
+        orders.place(seller, limit('SELL', '200', '0.1')),
+      ]);
+      for (const outcome of outcomes) {
+        if (outcome.status === 'rejected') failures.push(String(outcome.reason));
+      }
+    }
+
+    expect(failures).toEqual([]);
+  }, 120_000);
 });
 
 describe('order placement against Postgres', () => {

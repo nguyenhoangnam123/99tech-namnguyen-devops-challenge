@@ -1,6 +1,13 @@
-import { exchangeAccount, journal, type Journal, releaseJournal, userAccount } from './ledger.js';
-import type { Asset, Market } from './markets.js';
-import type { TradeEvent } from './matching/messages.js';
+import {
+  type AccountRef,
+  exchangeAccount,
+  journal,
+  type Journal,
+  releaseJournal,
+  userAccount,
+} from './ledger.js';
+import { type Asset, type Market, findMarket } from './markets.js';
+import type { MatcherEvent, TradeEvent } from './matching/messages.js';
 import { type Amount, mulDown } from './money.js';
 import type { FinalStatus, OrderStatus, Side } from './orders.js';
 import { InvariantViolation } from './result.js';
@@ -181,4 +188,30 @@ function fillOf(
     feeAsset,
     executedAt: trade.executedAt,
   };
+}
+
+// Every account a command's events can touch. Settlement locks them all in
+// one ordered statement first; locking per journal deadlocks with new orders.
+export function accountsTouched(events: readonly MatcherEvent[]): AccountRef[] {
+  const accounts = new Map<string, AccountRef>();
+  const add = (account: AccountRef): void => {
+    accounts.set(`${account.owner ?? '-'}|${account.asset}|${account.kind}`, account);
+  };
+  for (const event of events) {
+    if (event.kind !== 'TRADE' && event.kind !== 'ORDER_DONE') continue;
+    const market = findMarket(event.symbol);
+    if (!market) throw new InvariantViolation(`Unknown market ${event.symbol}`);
+    const users = event.kind === 'TRADE' ? [event.makerUserId, event.takerUserId] : [event.userId];
+    for (const user of users) {
+      for (const asset of [market.base, market.quote]) {
+        add(userAccount(user, asset, 'AVAILABLE'));
+        add(userAccount(user, asset, 'HELD'));
+      }
+    }
+    if (event.kind === 'TRADE') {
+      add(exchangeAccount(market.base, 'FEES'));
+      add(exchangeAccount(market.quote, 'FEES'));
+    }
+  }
+  return [...accounts.values()];
 }

@@ -1,0 +1,34 @@
+# Deadlock found by the traders-50 SLO run (2026-11-17), before the fix
+
+oms-api answered 500 after ~1s (deadlock_timeout) for 4 of 6997 orders.
+Postgres log, one occurrence (oms-api placement vs oms-settler pid 16772):
+
+2026-11-17 11:20:54.424 UTC [18527] ERROR:  deadlock detected
+2026-11-17 11:20:54.424 UTC [18527] DETAIL:  Process 18527 waits for ShareLock on transaction 48838; blocked by process 16772.
+    Process 16772 waits for ShareLock on transaction 48840; blocked by process 18527.
+    Process 18527: 
+          select a.id, a.owner_id, a.asset, a.kind
+          from accounts a
+          join unnest(
+            $1::uuid[],
+            $2::text[],
+            $3::text[]
+          ) as r(owner_id, asset, kind)
+            on coalesce(a.owner_id, $4::uuid) = coalesce(r.owner_id, $5::uuid)
+            and a.asset = r.asset and a.kind = r.kind
+          order by a.id
+          for update of a
+    Process 16772: 
+          select a.id, a.owner_id, a.asset, a.kind
+          from accounts a
+          join unnest(
+            $1::uuid[],
+            $2::text[],
+            $3::text[]
+          ) as r(owner_id, asset, kind)
+            on coalesce(a.owner_id, $4::uuid) = coalesce(r.owner_id, $5::uuid)
+            and a.asset = r.asset and a.kind = r.kind
+          order by a.id
+          for update of a
+2026-11-17 11:20:54.424 UTC [18527] HINT:  See server log for query details.
+2026-11-17 11:20:54.424 UTC [18527] CONTEXT:  while locking tuple (14,131) in relation "accounts"

@@ -39,6 +39,10 @@ export class PgLedgerStore implements LedgerStore {
       .execute();
   }
 
+  async lock(accounts: readonly AccountRef[]): Promise<void> {
+    if (accounts.length > 0) await this.lockAccounts(accounts);
+  }
+
   async post(journal: Journal): Promise<'POSTED' | 'INSUFFICIENT_FUNDS'> {
     const ids = await this.lockAccounts(journal.postings.map((posting) => posting.account));
     const lines = journal.postings.map(({ account, amount }) => {
