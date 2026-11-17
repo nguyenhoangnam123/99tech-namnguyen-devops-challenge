@@ -17,6 +17,7 @@ export const file_exchange_v1_events: GenFile = /*@__PURE__*/
 /**
  * One batch per command, written in the same Kafka transaction
  * as the command offset. Event ids derive from the command id.
+ * The Kafka header `traceparent` carries W3C trace context.
  *
  * @generated from message exchange.v1.MatcherEventBatch
  */

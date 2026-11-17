@@ -17,12 +17,14 @@ x-app-env: &app-env
   KAFKA_BROKERS: kafka:9092
   DATABASE_URL: postgres://exchange:${POSTGRES_PASSWORD:?run make secrets}@postgres:5432/exchange
   VALIDATE_RESPONSES: ${VALIDATE_RESPONSES:-true}
-  # Zero-code OpenTelemetry. Off unless the obs profile runs (make up-obs).
-  NODE_OPTIONS: --import @exchange/platform/otel-register
+  # OpenTelemetry is preloaded by each command, not NODE_OPTIONS, so
+  # health check processes never load it. Off unless make up-obs.
   OTEL_SDK_DISABLED: ${OTEL_SDK_DISABLED:-true}
   OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
   OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
   OTEL_TRACES_EXPORTER: otlp
+  OTEL_TRACES_SAMPLER: parentbased_traceidratio
+  OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-1}
   OTEL_LOGS_EXPORTER: otlp
   OTEL_METRICS_EXPORTER: none
   OTEL_RESOURCE_ATTRIBUTES: deployment.environment=local
@@ -128,7 +130,7 @@ services:
   oms-api:
     <<: *app
     build: { context: .., dockerfile: Dockerfile }
-    command: [services/oms/dist/main.js]
+    command: [--import, '@exchange/platform/otel-register', services/oms/dist/main.js]
     environment:
       <<: *app-env
       OMS_ROLE: api
@@ -152,7 +154,7 @@ services:
 
   oms-relay:
     <<: *app
-    command: [services/oms/dist/main.js]
+    command: [--import, '@exchange/platform/otel-register', services/oms/dist/main.js]
     environment:
       <<: *app-env
       OMS_ROLE: relay
@@ -166,7 +168,7 @@ services:
 
   oms-settler:
     <<: *app
-    command: [services/oms/dist/main.js]
+    command: [--import, '@exchange/platform/otel-register', services/oms/dist/main.js]
     environment:
       <<: *app-env
       OMS_ROLE: settler
@@ -180,7 +182,7 @@ services:
 
   matcher:
     <<: *app
-    command: [services/matcher/dist/main.js]
+    command: [--import, '@exchange/platform/otel-register', services/matcher/dist/main.js]
     environment:
       <<: *app-env
       OTEL_SERVICE_NAME: matcher
@@ -191,7 +193,7 @@ services:
 
   marketdata:
     <<: *app
-    command: [services/marketdata/dist/main.js]
+    command: [--import, '@exchange/platform/otel-register', services/marketdata/dist/main.js]
     environment:
       <<: *app-env
       OTEL_SERVICE_NAME: marketdata
