@@ -14,13 +14,17 @@
   posting. Placement locks two accounts; settlement locks every account its batch can
   touch, up front. Locking per journal deadlocked settlement against new orders: the
   traders-50 SLO run found it, and an integration test now reproduces it.
-- Settlement re-checks every trade against the orders' own terms (symbol, limit price,
-  size) and stops the line instead of moving money on a bad event.
+- Settlement re-checks every event against the order rows (owner, symbol, limit price,
+  size) and stops the line instead of moving money on a bad event. The owner check also
+  keeps postings inside the lock set, which is built from the event.
 
 ## Consequences
 
 - Insufficient funds is decided by the database, under the row lock, not by a read
   that can race. The e2e double-spend test fires concurrent orders to prove it.
+- The up-front lock set is a superset: both assets for a closed order, and both fee
+  accounts for the whole transaction. Fee rows are hot, so settlement is serialised per
+  asset. That is fine for one settler; sharded fee accounts are the fix if it binds.
 - A refused journal leaves the transaction unusable. The unit of work refuses to report
   success after one, so a caller cannot commit a silent rollback.
 - Deferred to wave 2:

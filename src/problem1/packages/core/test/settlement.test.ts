@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Journal, Posting } from '../src/ledger.js';
-import type { TradeEvent } from '../src/matching/messages.js';
+import type { OrderDoneEvent, TradeEvent } from '../src/matching/messages.js';
 import { InvariantViolation } from '../src/result.js';
 import { accountsTouched, closeOrder, type OrderFunds, settleTrade } from '../src/settlement.js';
 import { BTC, amt } from './fixtures.js';
@@ -47,6 +47,17 @@ const bid: OrderFunds = {
   filledQuote: 0n,
   status: 'NEW',
 };
+
+const bidDone: OrderDoneEvent = {
+  kind: 'ORDER_DONE',
+  eventId: 'c:1',
+  symbol: 'BTC-USDT',
+  orderId: 'bid',
+  userId: 'buyer',
+  status: 'FILLED',
+  reason: 'FILLED',
+};
+const askDone: OrderDoneEvent = { ...bidDone, orderId: 'ask', userId: 'seller' };
 
 const describePostings = (journal: Journal): string[] =>
   journal.postings.map(
@@ -109,6 +120,9 @@ describe('settleTrade', () => {
     ['beyond the order size', {}, {}, { orderQuantity: amt('1.5') }],
     ['on another market', { symbol: 'ETH-USDT' }, {}, {}],
     ['against a market maker', {}, { limitPrice: null }, {}],
+    // The lock set comes from the event, postings from the order rows.
+    ['naming another maker owner', { makerUserId: 'mallory' }, {}, {}],
+    ['naming another taker owner', { takerUserId: 'mallory' }, {}, {}],
   ])('stops the line on a trade %s', (_label, tradePatch, makerPatch, takerPatch) => {
     expect(() =>
       settleTrade(
@@ -125,7 +139,9 @@ describe('settleTrade', () => {
       ...trade,
       takerSide: 'SELL',
       makerOrderId: 'bid',
+      makerUserId: 'buyer',
       takerOrderId: 'ask',
+      takerUserId: 'seller',
       price: amt('100'),
     };
     const buyMaker = { ...bid, limitPrice: amt('100') };
@@ -144,7 +160,7 @@ describe('settleTrade', () => {
 
 describe('closeOrder', () => {
   it('releases the remaining hold back to available', () => {
-    const { journal, order } = closeOrder({ ...bid, reservedRemaining: amt('20') }, 'FILLED');
+    const { journal, order } = closeOrder({ ...bid, reservedRemaining: amt('20') }, bidDone);
 
     expect(journal && describePostings(journal)).toEqual([
       `buyer:USDT:HELD ${-amt('20')}`,
@@ -154,29 +170,28 @@ describe('closeOrder', () => {
   });
 
   it('writes no journal when nothing is held', () => {
-    expect(closeOrder({ ...ask, reservedRemaining: 0n }, 'FILLED').journal).toBeUndefined();
+    expect(closeOrder({ ...ask, reservedRemaining: 0n }, askDone).journal).toBeUndefined();
   });
 
   it('refuses to close an order twice', () => {
-    expect(() => closeOrder({ ...ask, status: 'CANCELLED' }, 'CANCELLED')).toThrow(
+    const cancelled = { ...askDone, status: 'CANCELLED', reason: 'USER_CANCEL' } as const;
+    expect(() => closeOrder({ ...ask, status: 'CANCELLED' }, cancelled)).toThrow(
       InvariantViolation,
     );
+  });
+
+  it.each<[string, Partial<OrderDoneEvent>]>([
+    ['another order', { orderId: 'ask' }],
+    ['another owner', { userId: 'mallory' }],
+    ['another market', { symbol: 'ETH-USDT' }],
+  ])('refuses an event naming %s', (_label, patch) => {
+    expect(() => closeOrder(bid, { ...bidDone, ...patch })).toThrow(/does not match/);
   });
 });
 
 describe('accountsTouched', () => {
   it('covers both traders on both assets, plus fees, once each', () => {
-    const done = {
-      kind: 'ORDER_DONE',
-      eventId: 'c:1',
-      symbol: 'BTC-USDT',
-      orderId: 'bid',
-      userId: 'buyer',
-      status: 'FILLED',
-      reason: 'FILLED',
-    } as const;
-
-    const accounts = accountsTouched([trade, done]);
+    const accounts = accountsTouched([trade, bidDone]);
 
     expect(accounts).toHaveLength(10);
     expect(accounts).toContainEqual({ owner: 'buyer', asset: 'USDT', kind: 'AVAILABLE' });

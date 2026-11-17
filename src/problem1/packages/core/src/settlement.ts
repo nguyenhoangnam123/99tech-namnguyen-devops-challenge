@@ -7,9 +7,9 @@ import {
   userAccount,
 } from './ledger.js';
 import { type Asset, type Market, findMarket } from './markets.js';
-import type { MatcherEvent, TradeEvent } from './matching/messages.js';
+import type { MatcherEvent, OrderDoneEvent, TradeEvent } from './matching/messages.js';
 import { type Amount, mulDown } from './money.js';
-import type { FinalStatus, OrderStatus, Side } from './orders.js';
+import type { OrderStatus, Side } from './orders.js';
 import { InvariantViolation } from './result.js';
 
 export type LiquidityRole = 'MAKER' | 'TAKER';
@@ -105,7 +105,10 @@ export function settleTrade(
 }
 
 // Releases whatever is still held once the matcher is done with the order.
-export function closeOrder(order: OrderFunds, status: FinalStatus): OrderClosure {
+export function closeOrder(order: OrderFunds, done: OrderDoneEvent): OrderClosure {
+  const matches =
+    order.orderId === done.orderId && order.userId === done.userId && order.symbol === done.symbol;
+  if (!matches) throw new InvariantViolation(`Event ${done.eventId} does not match its order`);
   if (isFinal(order.status)) throw new InvariantViolation(`Order ${order.orderId} closed twice`);
   const release =
     order.reservedRemaining > 0n
@@ -114,13 +117,16 @@ export function closeOrder(order: OrderFunds, status: FinalStatus): OrderClosure
           amount: order.reservedRemaining,
         })
       : undefined;
-  return { journal: release, order: { ...order, reservedRemaining: 0n, status } };
+  return { journal: release, order: { ...order, reservedRemaining: 0n, status: done.status } };
 }
 
+// Owners must match too: accounts are locked from the event, posted from the rows.
 function assertParties(trade: TradeEvent, maker: OrderFunds, taker: OrderFunds): void {
   const matches =
     maker.orderId === trade.makerOrderId &&
     taker.orderId === trade.takerOrderId &&
+    maker.userId === trade.makerUserId &&
+    taker.userId === trade.takerUserId &&
     taker.side === trade.takerSide &&
     maker.side !== taker.side;
   if (!matches) throw new InvariantViolation(`Trade ${trade.eventId} does not match its orders`);

@@ -57,7 +57,7 @@ export class SettlementService {
 
   private async close(tx: TransactionPorts, done: OrderDoneEvent): Promise<void> {
     const orders = await tx.orders.lockMany([done.orderId]);
-    const closure = closeOrder(required(orders, done.orderId), done.status);
+    const closure = closeOrder(required(orders, done.orderId), done);
     if (closure.journal) await post(tx, closure.journal);
     await tx.orders.saveFunds(closure.order, this.clock.now(), done.reason);
   }
