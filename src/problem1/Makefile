@@ -1,3 +1,7 @@
+# pipefail: a failing command piped into tee must still fail the target.
+SHELL := bash
+.SHELLFLAGS := -o pipefail -c
+
 COMPOSE := docker compose --env-file deploy/.env -f deploy/docker-compose.yml
 
 .PHONY: help secrets up down nuke ps logs obs build lint typecheck test test-integration e2e chaos security perf gen check-gen ab
@@ -54,7 +58,7 @@ perf: ## k6 load test at 500 rps against the running stack (DURATION=2m)
 	@mkdir -p reports/perf
 	$(COMPOSE) run --rm -e CUSTODY_SECRET="$$(cat deploy/.secrets/custody-webhook-secret)" \
 	  -e DURATION=$(DURATION) k6 run --summary-export=/reports/perf/summary.json /scripts/load.js \
-	  | tee reports/perf/summary.txt
+	  | tee reports/perf/summary.txt; status=$$?; node scripts/sanitize-k6-summary.mjs reports/perf/summary.json; exit $$status
 
 gen: ## Regenerate code from contracts/
 	npm run gen
