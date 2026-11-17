@@ -7,17 +7,19 @@ import http from 'k6/http';
 const BASE = __ENV.BASE_URL;
 const SECRET = __ENV.CUSTODY_SECRET;
 const DURATION = __ENV.DURATION || '2m';
+// Same mix at a fraction of the rate, for shared CI runners.
+const RATE_SCALE = Number(__ENV.RATE_SCALE || 1);
 const SYMBOL = 'BTC-USDT';
 const USERS = 40;
 const MID = 50000;
 
-const scenario = (rate, exec) => ({
+const scenario = (fullRate, exec) => ({
   executor: 'constant-arrival-rate',
-  rate,
+  rate: Math.max(1, Math.round(fullRate * RATE_SCALE)),
   timeUnit: '1s',
   duration: DURATION,
-  preAllocatedVUs: Math.max(5, Math.ceil(rate / 4)),
-  maxVUs: rate * 2,
+  preAllocatedVUs: Math.max(5, Math.ceil(fullRate / 4)),
+  maxVUs: fullRate * 2,
   exec,
 });
 
