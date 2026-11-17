@@ -1,5 +1,5 @@
-# Agent: one collector per host. Services and k6 send OTLP here; it also
-# scrapes service /metrics and reads container CPU and memory from Docker.
+# Agent: one collector per host. Services and k6 send OTLP here; it scrapes
+# service /metrics and the VM's node-exporter, and reads Docker container stats.
 receivers:
   otlp:
     protocols:
@@ -17,6 +17,13 @@ receivers:
           relabel_configs:
             - source_labels: [__meta_dns_name]
               target_label: role
+        - job_name: vm
+          scrape_interval: 5s
+          static_configs: [{ targets: ['node-exporter:9100'] }]
+        # The agent's own health: accepted, refused and failed per signal.
+        - job_name: otelcol
+          scrape_interval: 5s
+          static_configs: [{ targets: ['127.0.0.1:8888'] }]
   docker_stats:
     endpoint: unix:///var/run/docker.sock
     collection_interval: 5s
@@ -62,3 +69,6 @@ service:
       exporters: [otlp_http/loki]
   telemetry:
     logs: { level: warn }
+    metrics:
+      readers:
+        - pull: { exporter: { prometheus: { host: 127.0.0.1, port: 8888 } } }

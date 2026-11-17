@@ -232,7 +232,24 @@ services:
     deploy:
       resources:
         limits: { cpus: '0.5', memory: 256m }
-    depends_on: [loki, tempo, mimir]
+    depends_on: [loki, tempo, mimir, node-exporter]
+
+  # The Docker VM itself: CPU, memory and IO stall time (PSI) and swap.
+  # Every container shares the VM, so a stall here hits them all at once.
+  node-exporter:
+    image: prom/node-exporter:v1.9.1
+    profiles: [obs]
+    pid: host
+    command:
+      - --collector.disable-defaults
+      - --collector.pressure
+      - --collector.meminfo
+      - --collector.vmstat
+      - --collector.cpu
+      - --collector.loadavg
+    deploy:
+      resources:
+        limits: { cpus: '0.2', memory: 64m }
 
   loki:
     image: grafana/loki:3.7.8
