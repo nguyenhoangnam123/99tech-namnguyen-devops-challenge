@@ -1,0 +1,9 @@
+
+ RUN  v5.1.0 /Users/namnh21894/Documents/tech99/99tech-devops-challenge/src/problem1
+
+
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+   Start at  16:14:23
+   Duration  10.43s (tests 99%)
+

@@ -11,12 +11,20 @@ export interface RateLimitConfig {
 // Redis-backed; a Redis outage falls back to per-process memory.
 export class RateLimits {
   private readonly authByIp: RateLimiterRedis;
-  private readonly loginByAccount: RateLimiterRedis;
+  private readonly loginFailures: RateLimiterRedis;
   private readonly orders: RateLimiterRedis;
 
-  constructor(redis: Redis, config: RateLimitConfig) {
+  constructor(
+    redis: Redis,
+    private readonly config: RateLimitConfig,
+  ) {
     this.authByIp = limiter(redis, 'rl:auth-ip', config.authPerIpPerMinute, 60);
-    this.loginByAccount = limiter(redis, 'rl:login', config.loginsPerAccountPer15Minutes, 15 * 60);
+    this.loginFailures = limiter(
+      redis,
+      'rl:login-fail',
+      config.loginsPerAccountPer15Minutes,
+      15 * 60,
+    );
     this.orders = limiter(redis, 'rl:orders', config.ordersPerSecond, 1);
   }
 
@@ -24,12 +32,17 @@ export class RateLimits {
     return consume(this.authByIp, clientIp);
   }
 
+  // Only failures count against the account; a success clears them.
   async allowLogin(clientIp: string, email: string): Promise<boolean> {
-    const [byIp, byAccount] = await Promise.all([
-      consume(this.authByIp, clientIp),
-      consume(this.loginByAccount, email.toLowerCase()),
-    ]);
-    return byIp && byAccount;
+    if (!(await consume(this.authByIp, clientIp))) return false;
+    const failures = await this.loginFailures.get(email.toLowerCase()).catch(() => null);
+    return (failures?.consumedPoints ?? 0) < this.config.loginsPerAccountPer15Minutes;
+  }
+
+  async recordLogin(email: string, succeeded: boolean): Promise<void> {
+    const key = email.toLowerCase();
+    if (succeeded) await this.loginFailures.delete(key);
+    else await this.loginFailures.penalty(key, 1);
   }
 
   allowOrder(userId: string): Promise<boolean> {

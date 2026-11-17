@@ -13,7 +13,7 @@ export const omsConfigSchema = z.discriminatedUnion('OMS_ROLE', [
     JWT_TTL_SECONDS: z.coerce.number().int().positive().default(900),
     CUSTODY_WEBHOOK_SECRET: z.string().min(32),
     VALIDATE_RESPONSES: booleanFlag.default(false),
-    AUTH_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(300),
+    AUTH_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(120),
     LOGIN_ATTEMPTS_PER_15_MINUTES: z.coerce.number().int().positive().default(10),
     ORDER_RATE_LIMIT_PER_SECOND: z.coerce.number().int().positive().default(20),
   }),

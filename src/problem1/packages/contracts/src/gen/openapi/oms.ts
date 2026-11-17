@@ -343,6 +343,7 @@ export interface operations {
             400: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
             429: components["responses"]["Problem"];
+            503: components["responses"]["Problem"];
         };
     };
     login: {
@@ -370,6 +371,7 @@ export interface operations {
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             429: components["responses"]["Problem"];
+            503: components["responses"]["Problem"];
         };
     };
     listBalances: {

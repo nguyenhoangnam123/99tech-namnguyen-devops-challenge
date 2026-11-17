@@ -5,3 +5,4 @@ export * from './lifecycle.js';
 export * from './logger.js';
 export * from './metrics.js';
 export * from './postgres.js';
+export * from './bounded.js';

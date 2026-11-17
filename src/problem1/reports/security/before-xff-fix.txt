@@ -1,0 +1,101 @@
+
+ RUN  v5.1.0 /Users/namnh21894/Documents/tech99/99tech-devops-challenge/src/problem1
+
+ ❯ |security| tests/security/abuse.test.ts (15 tests | 5 failed) 13878ms
+   ❯ credential guessing (2)
+     × locks an account after ten bad passwords, whatever the password 1729ms
+     × keys the per-IP limit on the real client, not a spoofed X-Forwarded-For 10128ms
+   ❯ input hardening (5)
+     × refuses oversized bodies at the edge 3ms
+     × rejects an injection in a path id by contract, before any query runs 2ms
+     × rejects an injection in a query by contract, before any query runs 1ms
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |security| tests/security/abuse.test.ts [ tests/security/abuse.test.ts ]
+TypeError: Cannot read properties of undefined (reading 'map')
+ ❯ Trader.cancelAllOpen tests/support/api.ts:98:35
+     96|   async cancelAllOpen(): Promise<void> {
+     97|     const { body } = await call<Oms['OrderList']>('GET', '/v1/orders?s…
+     98|     await Promise.all(body.orders.map((order) => this.cancel(order.ord…
+       |                                   ^
+     99|   }
+    100|
+ ❯ tests/security/abuse.test.ts:25:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |security| tests/security/abuse.test.ts > credential guessing > locks an account after ten bad passwords, whatever the password
+AssertionError: expected [ 401, 401, 401, 401, 401, 401, …(4) ] to deeply equal [ 401, 401, 401, 401, 401, 401, …(4) ]
+
+- Expected
++ Received
+
+@@ -6,7 +6,7 @@
+    401,
+    401,
+    401,
+    401,
+    401,
+-   401,
++   429,
+  ]
+
+ ❯ tests/security/abuse.test.ts:121:34
+    119|     for (let i = 0; i < 11; i++) guesses.push((await attempt(`wrong-pa…
+    120|
+    121|     expect(guesses.slice(0, 10)).toEqual(Array(10).fill(401));
+       |                                  ^
+    122|     expect(guesses[10]).toBe(429);
+    123|     expect((await attempt('correct horse battery staple')).status).toB…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  |security| tests/security/abuse.test.ts > credential guessing > keys the per-IP limit on the real client, not a spoofed X-Forwarded-For
+AssertionError: expected [ Array(330) ] to include 429
+ ❯ tests/security/abuse.test.ts:136:22
+    134|     );
+    135|
+    136|     expect(statuses).toContain(429);
+       |                      ^
+    137|   }, 60_000);
+    138| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  |security| tests/security/abuse.test.ts > input hardening > refuses oversized bodies at the edge
+Error: register failed: 503
+ ❯ Function.create tests/support/api.ts:57:42
+     55|     const password = 'correct horse battery staple';
+     56|     const registered = await call<Oms['Registered']>('POST', '/v1/auth…
+     57|     if (registered.status !== 201) throw new Error(`register failed: $…
+       |                                          ^
+     58|     const login = await call<Oms['Token']>('POST', '/v1/auth/login', {…
+     59|     if (login.status !== 200) throw new Error(`login failed: ${String(…
+ ❯ tests/security/abuse.test.ts:142:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  |security| tests/security/abuse.test.ts > input hardening > rejects an injection in a path id by contract, before any query runs
+ FAIL  |security| tests/security/abuse.test.ts > input hardening > rejects an injection in a query by contract, before any query runs
+Error: register failed: 503
+ ❯ Function.create tests/support/api.ts:57:42
+     55|     const password = 'correct horse battery staple';
+     56|     const registered = await call<Oms['Registered']>('POST', '/v1/auth…
+     57|     if (registered.status !== 201) throw new Error(`register failed: $…
+       |                                          ^
+     58|     const login = await call<Oms['Token']>('POST', '/v1/auth/login', {…
+     59|     if (login.status !== 200) throw new Error(`login failed: ${String(…
+ ❯ tests/security/abuse.test.ts:156:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 10 passed (15)
+   Start at  16:10:26
+   Duration  14.15s (tests 99%, import 1%)
+

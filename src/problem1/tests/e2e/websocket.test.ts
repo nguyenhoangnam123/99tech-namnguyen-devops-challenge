@@ -7,7 +7,10 @@ type Message = Md['WsDepth'] | Md['WsTrades'] | Md['WsTicker'] | Md['WsError'];
 
 const sockets: WebSocket[] = [];
 
-async function connect(): Promise<{ socket: WebSocket; next: (match: (m: Message) => boolean) => Promise<Message> }> {
+async function connect(): Promise<{
+  socket: WebSocket;
+  next: (match: (m: Message) => boolean) => Promise<Message>;
+}> {
   const socket = new WebSocket(`${env.baseUrl.replace('http', 'ws')}/v1/ws`);
   sockets.push(socket);
   const inbox: Message[] = [];
@@ -17,7 +20,7 @@ async function connect(): Promise<{ socket: WebSocket; next: (match: (m: Message
     const deadline = Date.now() + 5000;
     for (;;) {
       const index = inbox.findIndex(match);
-      if (index >= 0) return inbox.splice(index, 1)[0] as Message;
+      if (index >= 0) return inbox.splice(index, 1)[0]!;
       if (Date.now() > deadline) throw new Error('no matching message');
       await new Promise((resolve) => setTimeout(resolve, 20));
     }
@@ -27,7 +30,9 @@ async function connect(): Promise<{ socket: WebSocket; next: (match: (m: Message
 
 describe('market data stream', () => {
   afterEach(() => {
-    sockets.splice(0).forEach((socket) => socket.close());
+    sockets.splice(0).forEach((socket) => {
+      socket.close();
+    });
   });
 
   it('sends a snapshot on subscribe, then pushes book changes', async () => {
@@ -38,10 +43,19 @@ describe('market data stream', () => {
     const price = await freePrice('ETH-USDT');
     const seller = await Trader.create('ws');
     await seller.fund('ETH', '1');
-    await seller.place({ symbol: 'ETH-USDT', side: 'SELL', type: 'LIMIT', price: `${price}`, quantity: '0.25' });
+    await seller.place({
+      symbol: 'ETH-USDT',
+      side: 'SELL',
+      type: 'LIMIT',
+      price: `${price}`,
+      quantity: '0.25',
+    });
 
     const update = await next(
-      (m) => 'channel' in m && m.channel === 'depth:ETH-USDT' && JSON.stringify(m.data).includes(`"${price}"`),
+      (m) =>
+        'channel' in m &&
+        m.channel === 'depth:ETH-USDT' &&
+        JSON.stringify(m.data).includes(`"${price}"`),
     );
     expect(update).toMatchObject({ channel: 'depth:ETH-USDT' });
     await seller.cancelAllOpen();

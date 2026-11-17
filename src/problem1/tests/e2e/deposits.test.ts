@@ -10,7 +10,9 @@ describe('custody deposits', () => {
 
   beforeAll(async () => {
     trader = await Trader.create('depositor');
-    address = (await call<Oms['DepositAddress']>('GET', '/v1/deposit-addresses/ETH', { token: trader.token })).body.address;
+    address = (
+      await call<Oms['DepositAddress']>('GET', '/v1/deposit-addresses/ETH', { token: trader.token })
+    ).body.address;
   });
 
   afterAll(async () => {
@@ -19,11 +21,19 @@ describe('custody deposits', () => {
 
   it('credits a confirmed deposit to the address owner', async () => {
     const before = await trader.balance('ETH');
-    const receipt = await notifyDeposit({ txId: uniqueId('tx'), address, asset: 'ETH', amount: '1.25' });
+    const receipt = await notifyDeposit({
+      txId: uniqueId('tx'),
+      address,
+      asset: 'ETH',
+      amount: '1.25',
+    });
 
     expect(receipt.status).toBe(200);
     expect(receipt.body).toMatchObject({ status: 'CREDITED', duplicate: false });
-    expect(Number((await trader.balance('ETH')).available) - Number(before.available)).toBeCloseTo(1.25, 12);
+    expect(Number((await trader.balance('ETH')).available) - Number(before.available)).toBeCloseTo(
+      1.25,
+      12,
+    );
   });
 
   it('acknowledges a redelivery without crediting again', async () => {
@@ -45,8 +55,16 @@ describe('custody deposits', () => {
 
     expect(receipts.map((r) => r.status)).toEqual(Array(25).fill(200));
     expect(receipts.filter((r) => !r.body.duplicate)).toHaveLength(1);
-    expect(Number((await trader.balance('ETH')).available) - Number(before.available)).toBeCloseTo(0.5, 12);
-    expect(await scalar<string>('select count(*)::text as value from journal_entries where ref_id = $1', [notice.txId])).toBe('2');
+    expect(Number((await trader.balance('ETH')).available) - Number(before.available)).toBeCloseTo(
+      0.5,
+      12,
+    );
+    expect(
+      await scalar<string>(
+        'select count(*)::text as value from journal_entries where ref_id = $1',
+        [notice.txId],
+      ),
+    ).toBe('2');
   });
 
   it('refuses to reuse a transaction id for different content', async () => {
@@ -59,8 +77,18 @@ describe('custody deposits', () => {
   });
 
   it('parks deposits to unknown addresses or the wrong asset instead of crediting', async () => {
-    const unknown = await notifyDeposit({ txId: uniqueId('tx'), address: 'eth1nobody', asset: 'ETH', amount: '3' });
-    const wrongAsset = await notifyDeposit({ txId: uniqueId('tx'), address, asset: 'BTC', amount: '3' });
+    const unknown = await notifyDeposit({
+      txId: uniqueId('tx'),
+      address: 'eth1nobody',
+      asset: 'ETH',
+      amount: '3',
+    });
+    const wrongAsset = await notifyDeposit({
+      txId: uniqueId('tx'),
+      address,
+      asset: 'BTC',
+      amount: '3',
+    });
 
     expect(unknown.body.status).toBe('UNMATCHED');
     expect(wrongAsset.body.status).toBe('UNMATCHED');
@@ -68,13 +96,19 @@ describe('custody deposits', () => {
   });
 
   it.each([
-    ['a bad signature', (body: string) => ({ ...custodyHeaders(body), 'x-custody-signature': '00'.repeat(32) })],
+    [
+      'a bad signature',
+      (body: string) => ({ ...custodyHeaders(body), 'x-custody-signature': '00'.repeat(32) }),
+    ],
     ['a stale timestamp', (body: string) => custodyHeaders(body, Date.now() - 10 * 60 * 1000)],
     ['a signature for another body', () => custodyHeaders('{"txId":"other"}')],
   ])('rejects a callback with %s', async (_label, headersFor) => {
     const rawBody = JSON.stringify({ txId: uniqueId('tx'), address, asset: 'ETH', amount: '1000' });
 
-    const response = await call('POST', '/v1/custody/deposits', { rawBody, headers: headersFor(rawBody) });
+    const response = await call('POST', '/v1/custody/deposits', {
+      rawBody,
+      headers: headersFor(rawBody),
+    });
 
     expect(response.status).toBe(401);
   });

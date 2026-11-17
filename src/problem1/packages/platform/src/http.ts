@@ -80,6 +80,12 @@ interface OpenApiDocument {
 type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete';
 const METHODS: readonly HttpMethod[] = ['get', 'post', 'put', 'patch', 'delete'];
 
+// Thrown by adapters that refuse work instead of queueing it forever.
+export class OverloadedError extends Error {
+  override readonly name = 'OverloadedError';
+  readonly status = 503;
+}
+
 type ContextRequest = Request & { principal?: Principal; rawBody?: Buffer };
 
 export function problem<S extends number>(
@@ -262,8 +268,10 @@ function errorHandler(logger: Logger) {
       return;
     }
     const status = statusOf(error);
-    if (status >= 500)
-      logger.error({ err: error, requestId: res.locals.requestId }, 'request failed');
+    const requestId: unknown = res.locals.requestId;
+    if (status === 503) logger.warn({ err: error, requestId }, 'shedding load');
+    else if (status >= 500) logger.error({ err: error, requestId }, 'request failed');
+    if (status === 503) res.setHeader('retry-after', '1');
     const body =
       status >= 500 ? problem(status, codeOf(status)).body : clientProblem(status, error);
     res.status(status).type('application/problem+json').json(body);
@@ -293,6 +301,7 @@ const CODES: Record<number, string> = {
   415: 'UNSUPPORTED_MEDIA_TYPE',
   422: 'UNPROCESSABLE',
   429: 'RATE_LIMITED',
+  503: 'UNAVAILABLE',
 };
 
 const codeOf = (status: number): string => CODES[status] ?? 'INTERNAL';

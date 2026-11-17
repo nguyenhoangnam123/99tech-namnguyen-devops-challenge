@@ -52,6 +52,7 @@ export function omsHandlers(deps: HttpDeps): OperationHandlers<OmsApi.operations
     login: async ({ body, clientIp }) => {
       if (!(await limits.allowLogin(clientIp, body.email))) return problem(429, 'RATE_LIMITED');
       const result = await accounts.login(body.email, body.password);
+      await limits.recordLogin(body.email, result.ok);
       if (!result.ok) return problem(401, result.error);
       const { token, expiresIn } = result.value;
       return { status: 200, body: { accessToken: token, tokenType: 'Bearer', expiresIn } };

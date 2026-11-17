@@ -8,7 +8,11 @@ describe('API contract', () => {
 
     expect(status).toBe(200);
     expect(body.markets.map((market) => market.symbol)).toEqual(['BTC-USDT', 'ETH-USDT']);
-    expect(body.markets[0]).toMatchObject({ tickSize: '0.01', lotSize: '0.00001', takerFeeRate: '0.001' });
+    expect(body.markets[0]).toMatchObject({
+      tickSize: '0.01',
+      lotSize: '0.00001',
+      takerFeeRate: '0.001',
+    });
   });
 
   it('answers errors as RFC 9457 problems with a machine code', async () => {
@@ -23,7 +27,15 @@ describe('API contract', () => {
     const trader = await Trader.create();
     const response = await call<Oms['Problem']>('POST', '/v1/orders', {
       token: trader.token,
-      body: { clientOrderId: 'x1', symbol: 'ETH-USDT', side: 'BUY', type: 'LIMIT', price: '1', quantity: '1', userId: 'someone-else' },
+      body: {
+        clientOrderId: 'x1',
+        symbol: 'ETH-USDT',
+        side: 'BUY',
+        type: 'LIMIT',
+        price: '1',
+        quantity: '1',
+        userId: 'someone-else',
+      },
     });
 
     expect(response.status).toBe(400);
@@ -36,7 +48,13 @@ describe('API contract', () => {
     ['negative', '-5'],
   ])('rejects a %s amount before it reaches the domain', async (_label, price) => {
     const trader = await Trader.create();
-    const response = await trader.place({ symbol: 'ETH-USDT', side: 'BUY', type: 'LIMIT', price, quantity: '1' });
+    const response = await trader.place({
+      symbol: 'ETH-USDT',
+      side: 'BUY',
+      type: 'LIMIT',
+      price,
+      quantity: '1',
+    });
 
     expect(response.status).toBe(400);
   });
@@ -46,9 +64,12 @@ describe('API contract', () => {
     expect(response.headers.get('x-request-id')).toMatch(/^[0-9a-f]{32}$/);
   });
 
-  it.each(['/metrics', '/readyz', '/v1/unknown'])('does not expose %s at the edge', async (path) => {
-    const response = await call<Oms['Problem']>('GET', path);
-    expect(response.status).toBe(404);
-    expect(response.body.code).toBe('NOT_FOUND');
-  });
+  it.each(['/metrics', '/readyz', '/v1/unknown'])(
+    'does not expose %s at the edge',
+    async (path) => {
+      const response = await call<Oms['Problem']>('GET', path);
+      expect(response.status).toBe(404);
+      expect(response.body.code).toBe('NOT_FOUND');
+    },
+  );
 });
