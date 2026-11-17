@@ -3,6 +3,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 
 for (const file of process.argv.slice(2)) {
-  const { setup_data: _tokens, ...summary } = JSON.parse(readFileSync(file, 'utf8'));
+  const summary = JSON.parse(readFileSync(file, 'utf8'));
+  delete summary.setup_data;
   writeFileSync(file, `${JSON.stringify(summary, null, 2)}\n`);
 }
