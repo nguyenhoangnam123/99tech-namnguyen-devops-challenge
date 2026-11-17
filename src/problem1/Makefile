@@ -4,7 +4,7 @@ SHELL := bash
 
 COMPOSE := docker compose --env-file deploy/.env -f deploy/docker-compose.yml
 
-.PHONY: help secrets up up-obs down nuke ps logs build lint typecheck test test-integration e2e chaos security perf slo gen check-gen ab
+.PHONY: help secrets up up-obs down nuke ps logs build lint typecheck test test-integration e2e chaos security perf slo gen check-gen dashboards ab
 
 help: ## List targets
 	@grep -E '^[a-z0-9-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-18s %s\n", $$1, $$2}'
@@ -83,8 +83,15 @@ slo: secrets ## SLO catalog with CPU and memory per service (SCENARIOS, WINDOW, 
 gen: ## Regenerate code from contracts/
 	npm run gen
 
-check-gen: ## Fail if generated code is stale
-	npm run gen && git diff --exit-code -- packages/contracts/src/gen
+GENERATED := packages/contracts/src/gen deploy/grafana/dashboards
+
+check-gen: ## Fail if generated code or dashboards are stale, edited or untracked
+	npm run gen && node deploy/grafana/dashboards.mjs
+	@test -z "$$(git status --porcelain -- $(GENERATED))" || \
+	  { git status --short -- $(GENERATED); git diff -- $(GENERATED); exit 1; }
+
+dashboards: ## Regenerate Grafana dashboards from deploy/grafana/dashboards.mjs
+	node deploy/grafana/dashboards.mjs
 
 ab: ## A/B the same scenario on two commits: make ab A=<sha> B=<sha>
 	scripts/ab.sh $(A) $(B)

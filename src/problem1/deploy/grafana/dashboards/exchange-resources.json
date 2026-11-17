@@ -1,0 +1,729 @@
+{
+  "uid": "exchange-resources",
+  "title": "Exchange: CPU and memory",
+  "description": "Per compose service from Docker stats, CPU as % of one core; then the agent itself.",
+  "tags": [
+    "exchange"
+  ],
+  "timezone": "browser",
+  "refresh": "10s",
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "schemaVersion": 41,
+  "editable": true,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "type": "row",
+      "title": "Containers",
+      "collapsed": false,
+      "panels": [],
+      "id": 1,
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "CPU per service (% of one core)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "expr": "sum by (compose_service) (max by (compose_service, container_name) (rate(container_cpu_usage_nanoseconds_total{compose_project=\"exchange\"}[$__rate_interval]))) / 1e7",
+          "legendFormat": "{{compose_service}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "thresholdsStyle": {
+              "mode": "off"
+            },
+            "fillOpacity": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "list"
+        }
+      },
+      "id": 2,
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Memory per service",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "expr": "sum by (compose_service) (max by (compose_service, container_name) (container_memory_usage_total_bytes{compose_project=\"exchange\"}))",
+          "legendFormat": "{{compose_service}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "thresholdsStyle": {
+              "mode": "off"
+            },
+            "fillOpacity": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "list"
+        }
+      },
+      "id": 3,
+      "gridPos": {
+        "x": 12,
+        "y": 1,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Memory used of limit",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "expr": "max by (compose_service) (container_memory_usage_total_bytes{compose_project=\"exchange\"} / container_memory_usage_limit_bytes{compose_project=\"exchange\"})",
+          "legendFormat": "{{compose_service}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0.9
+              }
+            ]
+          },
+          "custom": {
+            "thresholdsStyle": {
+              "mode": "line+area"
+            },
+            "fillOpacity": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "list"
+        }
+      },
+      "id": 4,
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Network received per service",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "expr": "sum by (compose_service) (max by (compose_service, container_name) (rate(container_network_io_usage_rx_bytes_total{compose_project=\"exchange\"}[$__rate_interval])))",
+          "legendFormat": "{{compose_service}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "thresholdsStyle": {
+              "mode": "off"
+            },
+            "fillOpacity": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "list"
+        }
+      },
+      "id": 5,
+      "gridPos": {
+        "x": 12,
+        "y": 9,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "row",
+      "title": "Docker VM: shared by every container",
+      "collapsed": false,
+      "panels": [],
+      "id": 6,
+      "gridPos": {
+        "x": 0,
+        "y": 17,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Stall time share (PSI)",
+      "description": "Time some (or all) tasks waited. Memory or IO stalls pause every service.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "expr": "rate(node_pressure_cpu_waiting_seconds_total[$__rate_interval])",
+          "legendFormat": "CPU",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "expr": "rate(node_pressure_memory_waiting_seconds_total[$__rate_interval])",
+          "legendFormat": "memory",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "expr": "rate(node_pressure_memory_stalled_seconds_total[$__rate_interval])",
+          "legendFormat": "memory, all tasks",
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "expr": "rate(node_pressure_io_waiting_seconds_total[$__rate_interval])",
+          "legendFormat": "IO",
+          "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "expr": "rate(node_pressure_io_stalled_seconds_total[$__rate_interval])",
+          "legendFormat": "IO, all tasks",
+          "refId": "E"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "thresholdsStyle": {
+              "mode": "off"
+            },
+            "fillOpacity": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "list"
+        }
+      },
+      "id": 7,
+      "gridPos": {
+        "x": 0,
+        "y": 18,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Memory available and swap-in",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "expr": "node_memory_MemAvailable_bytes",
+          "legendFormat": "available",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "expr": "rate(node_vmstat_pswpin[$__rate_interval]) * 4096",
+          "legendFormat": "swap-in bytes/s",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "thresholdsStyle": {
+              "mode": "off"
+            },
+            "fillOpacity": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "list"
+        }
+      },
+      "id": 8,
+      "gridPos": {
+        "x": 12,
+        "y": 18,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "row",
+      "title": "Telemetry agent: the OTel Collector",
+      "collapsed": false,
+      "panels": [],
+      "id": 9,
+      "gridPos": {
+        "x": 0,
+        "y": 26,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Accepted per signal",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "expr": "sum(rate(otelcol_receiver_accepted_spans_total[$__rate_interval]))",
+          "legendFormat": "spans",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "expr": "sum(rate(otelcol_receiver_accepted_metric_points_total[$__rate_interval]))",
+          "legendFormat": "metric points",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "expr": "sum(rate(otelcol_receiver_accepted_log_records_total[$__rate_interval]))",
+          "legendFormat": "log records",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "cps",
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "thresholdsStyle": {
+              "mode": "off"
+            },
+            "fillOpacity": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "list"
+        }
+      },
+      "id": 10,
+      "gridPos": {
+        "x": 0,
+        "y": 27,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Refused or failed share of intake",
+      "description": "Lost before export. The memory limiter refuses every signal at once.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "expr": "(sum(rate(otelcol_receiver_refused_spans_total[$__rate_interval])) + sum(rate(otelcol_receiver_failed_spans_total[$__rate_interval]))) / (sum(rate(otelcol_receiver_accepted_spans_total[$__rate_interval])) + sum(rate(otelcol_receiver_refused_spans_total[$__rate_interval])) + sum(rate(otelcol_receiver_failed_spans_total[$__rate_interval])))",
+          "legendFormat": "spans",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "expr": "(sum(rate(otelcol_receiver_refused_metric_points_total[$__rate_interval])) + sum(rate(otelcol_receiver_failed_metric_points_total[$__rate_interval]))) / (sum(rate(otelcol_receiver_accepted_metric_points_total[$__rate_interval])) + sum(rate(otelcol_receiver_refused_metric_points_total[$__rate_interval])) + sum(rate(otelcol_receiver_failed_metric_points_total[$__rate_interval])))",
+          "legendFormat": "metric points",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "expr": "(sum(rate(otelcol_receiver_refused_log_records_total[$__rate_interval])) + sum(rate(otelcol_receiver_failed_log_records_total[$__rate_interval]))) / (sum(rate(otelcol_receiver_accepted_log_records_total[$__rate_interval])) + sum(rate(otelcol_receiver_refused_log_records_total[$__rate_interval])) + sum(rate(otelcol_receiver_failed_log_records_total[$__rate_interval])))",
+          "legendFormat": "log records",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0.001
+              }
+            ]
+          },
+          "custom": {
+            "thresholdsStyle": {
+              "mode": "line+area"
+            },
+            "fillOpacity": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "list"
+        }
+      },
+      "id": 11,
+      "gridPos": {
+        "x": 12,
+        "y": 27,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Exporter queue fill",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "expr": "max by (exporter) (otelcol_exporter_queue_size / otelcol_exporter_queue_capacity)",
+          "legendFormat": "{{exporter}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0.8
+              }
+            ]
+          },
+          "custom": {
+            "thresholdsStyle": {
+              "mode": "line+area"
+            },
+            "fillOpacity": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "list"
+        }
+      },
+      "id": 12,
+      "gridPos": {
+        "x": 0,
+        "y": 35,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Agent memory against its limiter",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "expr": "max(otelcol_process_memory_rss)",
+          "legendFormat": "rss",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 209715200
+              }
+            ]
+          },
+          "custom": {
+            "thresholdsStyle": {
+              "mode": "line+area"
+            },
+            "fillOpacity": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "list"
+        }
+      },
+      "id": 13,
+      "gridPos": {
+        "x": 12,
+        "y": 35,
+        "w": 12,
+        "h": 8
+      }
+    }
+  ]
+}

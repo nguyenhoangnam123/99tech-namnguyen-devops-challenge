@@ -2,3 +2,4 @@
 **/gen
 reports
 package-lock.json
+deploy/grafana/dashboards
