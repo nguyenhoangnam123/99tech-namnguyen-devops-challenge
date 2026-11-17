@@ -1,6 +1,13 @@
+import { defaultClientConditions, defaultServerConditions } from 'vite';
 import { defineConfig } from 'vitest/config';
 
-const source = { resolve: { conditions: ['@exchange/source'] } };
+// Workspace packages resolve to their TypeScript source in every test,
+// so a stale or missing dist/ is never what gets tested.
+const SOURCE = '@exchange/source';
+const source = {
+  resolve: { conditions: [SOURCE, ...defaultClientConditions] },
+  ssr: { resolve: { conditions: [SOURCE, ...defaultServerConditions] } },
+};
 
 export default defineConfig({
   ...source,
