@@ -8,10 +8,9 @@ export interface BatchObserver {
   batchCommitted(size: number): void;
 }
 
-// Events and consumed offsets commit in one Kafka transaction.
-// The books change in memory before that commit, so after any failure
-// this processor refuses all further work: only a restart and replay
-// can make memory match the log again.
+// Events and offsets commit in one Kafka transaction. Books change in
+// memory first, so after any failure this refuses all further work:
+// only a restart and replay can realign memory with the log.
 export class CommandBatchProcessor {
   private failure: unknown;
 

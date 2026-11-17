@@ -30,3 +30,13 @@
   from the latest snapshot. Locally, `retention.ms=-1` keeps the full log.
 - A hot standby would replay continuously and take over on fencing; today a restart is a
   cold replay (seconds at this volume).
+
+## Operating rules
+
+- **Matching rules are part of the log's meaning.** Replay rebuilds identical books only
+  under the rules that produced the log. Changing a rule (the fill cap, self-trade policy,
+  rounding) is a deploy-time migration: snapshot or drain the books first, then replay
+  from the snapshot. Wave 2 stamps a rules version on event batches and refuses to start
+  when it differs from the tail of the log.
+- **Upgrade consumers before producers.** A new enum value (for example `FILL_LIMIT`) is
+  rejected by an older settler or marketdata. Roll those out first, then the matcher.

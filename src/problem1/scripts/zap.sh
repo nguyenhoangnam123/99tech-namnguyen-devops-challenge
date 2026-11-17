@@ -9,9 +9,22 @@ email="zap-$(date +%s)@example.test"
 password='correct horse battery staple'
 credentials="{\"email\":\"$email\",\"password\":\"$password\"}"
 
-curl -fsS -o /dev/null -H 'content-type: application/json' -d "$credentials" "$edge/v1/auth/register"
-token=$(curl -fsS -H 'content-type: application/json' -d "$credentials" "$edge/v1/auth/login" |
-  node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).accessToken))')
+response=$(mktemp)
+trap 'rm -f "$response"' EXIT
+
+# The per-IP auth limit may be spent by the abuse suite; wait out its window.
+auth() {
+  for _ in $(seq 1 20); do
+    status=$(curl -sS -o "$response" -w '%{http_code}' -H 'content-type: application/json' \
+      -d "$credentials" "$edge/v1/auth/$1")
+    [ "$status" != 429 ] && return 0
+    sleep 5
+  done
+  return 1
+}
+auth register
+auth login
+token=$(node -e 'process.stdout.write(JSON.parse(require("fs").readFileSync(process.argv[1])).accessToken)' "$response")
 
 mkdir -p reports/zap
 chmod 777 reports/zap

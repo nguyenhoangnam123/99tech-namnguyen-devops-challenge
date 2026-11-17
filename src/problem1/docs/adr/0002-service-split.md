@@ -10,11 +10,11 @@ Every extra service adds a network hop to the 100 ms budget and a distributed tr
 
 ## Decision
 
-| Service | Owns | Why separate |
-|---|---|---|
-| `oms` | Auth, balances, ledger, orders, settlement (Postgres) | Every money change happens in one ACID database |
-| `matcher` | Order books in memory | One stateful, deterministic writer; scales by splitting symbols |
-| `marketdata` | Depth, trades, ticker, WebSocket | Scales with connected clients; can lag without losing money |
+| Service      | Owns                                                  | Why separate                                                    |
+| ------------ | ----------------------------------------------------- | --------------------------------------------------------------- |
+| `oms`        | Auth, balances, ledger, orders, settlement (Postgres) | Every money change happens in one ACID database                 |
+| `matcher`    | Order books in memory                                 | One stateful, deterministic writer; scales by splitting symbols |
+| `marketdata` | Depth, trades, ticker, WebSocket                      | Scales with connected clients; can lag without losing money     |
 
 `oms` runs as three roles from one image: `api` (stateless, scales out), `relay` (outbox to
 Kafka) and `settler` (Kafka to ledger). Their failure modes differ, so they restart independently.

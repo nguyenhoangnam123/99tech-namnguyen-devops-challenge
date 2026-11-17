@@ -188,15 +188,18 @@ describe('credential guessing', () => {
   // concurrent burst all saw zero failures and got through.
   it('counts concurrent guesses atomically', async () => {
     const victim = await Trader.create('burst');
-    const statuses = await Promise.all(
+    const responses = await Promise.all(
       Array.from({ length: 30 }, (_, i) =>
-        call('POST', '/v1/auth/login', {
+        call<Oms['Problem']>('POST', '/v1/auth/login', {
           body: { email: victim.email, password: `burst-guess-${String(i)}` },
-        }).then((r) => r.status),
+        }),
       ),
     );
 
-    expect(statuses.filter((status) => status !== 429).length).toBeLessThanOrEqual(10);
+    expect(responses.filter((r) => r.status === 401).length).toBeLessThanOrEqual(10);
+    expect(responses.filter((r) => r.body.code === 'ACCOUNT_LOCKED').length).toBeGreaterThanOrEqual(
+      20,
+    );
   });
 
   it('keys the per-IP limit on the real client, not a spoofed X-Forwarded-For', async () => {

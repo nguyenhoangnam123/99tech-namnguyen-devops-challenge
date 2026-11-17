@@ -20,7 +20,7 @@ export class EventFeed {
   private readonly lastApplied = new Map<number, bigint>();
   private readonly pending = new Map<number, bigint>();
   private caughtUp = false;
-  private lastProgressAt = Date.now();
+  private lastProgressAt: number | undefined;
   private idleCheck: NodeJS.Timeout | undefined;
   private readonly applied: Counter;
 
@@ -86,11 +86,12 @@ export class EventFeed {
     this.caughtUp = this.pending.size === 0;
   }
 
-  // A log ending in an aborted transaction never reaches the target,
-  // so a feed that has been quiet for a while counts as caught up.
+  // A log ending in an aborted transaction never reaches its target, so a
+  // feed that stays quiet after its partitions are assigned is caught up.
   private markIdle(): void {
-    if (!this.caughtUp && Date.now() - this.lastProgressAt > IDLE_CAUGHT_UP_MS)
-      this.caughtUp = true;
+    if (this.caughtUp || !this.consumer || this.consumer.assignment().length === 0) return;
+    this.lastProgressAt ??= Date.now();
+    if (Date.now() - this.lastProgressAt > IDLE_CAUGHT_UP_MS) this.caughtUp = true;
   }
 
   private markProgress(partition: number, offset: bigint): void {

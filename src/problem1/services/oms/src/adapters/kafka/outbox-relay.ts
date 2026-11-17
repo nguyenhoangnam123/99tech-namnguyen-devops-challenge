@@ -52,57 +52,65 @@ export class OutboxRelay {
     });
   }
 
+  // A session lock on one dedicated connection elects a single leader,
+  // so no transaction stays open across the Kafka round trip.
   async run(): Promise<void> {
     const { signal } = this.stopping;
-    let lastPrune = 0;
-    while (!signal.aborted) {
-      const sent = await this.publishBatch();
-      if (Date.now() - lastPrune > 60_000) {
-        await this.prunePublished();
-        lastPrune = Date.now();
+    await this.db.connection().execute(async (connection) => {
+      while (!signal.aborted && !(await this.tryLead(connection))) await this.pause(1_000);
+      let lastPrune = 0;
+      while (!signal.aborted) {
+        const sent = await this.publishBatch(connection);
+        if (Date.now() - lastPrune > 60_000) {
+          await this.prunePublished();
+          lastPrune = Date.now();
+        }
+        if (sent === 0) await this.pause(this.options.idleWaitMs);
       }
-      if (sent === 0)
-        await sleep(this.options.idleWaitMs, undefined, { signal }).catch(() => undefined);
-    }
+    });
   }
 
   stop(): void {
     this.stopping.abort();
   }
 
-  // Publish then mark, in one transaction: a crash republishes, never drops.
-  async publishBatch(): Promise<number> {
-    return this.db.transaction().execute(async (trx) => {
-      const { rows } = await sql<{
-        locked: boolean;
-      }>`select pg_try_advisory_xact_lock(${RELAY_LOCK_KEY}) as locked`.execute(trx);
-      if (!rows[0]?.locked) return 0;
-      const batch = await trx
-        .selectFrom('outbox')
-        .select(['id', 'topic', 'message_key', 'payload'])
-        .where('published_at', 'is', null)
-        .orderBy('id')
-        .limit(this.options.batchSize)
-        .execute();
-      if (batch.length === 0) return 0;
-      await this.producer.sendBatch({
-        topicMessages: [...groupBy(batch, (row) => row.topic)].map(([topic, rowsForTopic]) => ({
-          topic,
-          messages: rowsForTopic.map((row) => ({ key: row.message_key, value: row.payload })),
-        })),
-      });
-      await trx
-        .updateTable('outbox')
-        .set({ published_at: new Date() })
-        .where(
-          'id',
-          'in',
-          batch.map((row) => row.id),
-        )
-        .execute();
-      this.published.inc(batch.length);
-      return batch.length;
+  // Publish, then mark: a crash in between republishes, never drops.
+  async publishBatch(connection: Kysely<DB>): Promise<number> {
+    const batch = await connection
+      .selectFrom('outbox')
+      .select(['id', 'topic', 'message_key', 'payload'])
+      .where('published_at', 'is', null)
+      .orderBy('id')
+      .limit(this.options.batchSize)
+      .execute();
+    if (batch.length === 0) return 0;
+    await this.producer.sendBatch({
+      topicMessages: [...groupBy(batch, (row) => row.topic)].map(([topic, rows]) => ({
+        topic,
+        messages: rows.map((row) => ({ key: row.message_key, value: row.payload })),
+      })),
     });
+    await connection
+      .updateTable('outbox')
+      .set({ published_at: new Date() })
+      .where(
+        'id',
+        'in',
+        batch.map((row) => row.id),
+      )
+      .execute();
+    this.published.inc(batch.length);
+    return batch.length;
+  }
+
+  private async tryLead(connection: Kysely<DB>): Promise<boolean> {
+    const { rows } = await sql<{ locked: boolean }>`
+      select pg_try_advisory_lock(${RELAY_LOCK_KEY}) as locked`.execute(connection);
+    return rows[0]?.locked ?? false;
+  }
+
+  private pause(ms: number): Promise<void> {
+    return sleep(ms, undefined, { signal: this.stopping.signal }).catch(() => undefined);
   }
 
   private async prunePublished(): Promise<void> {

@@ -17,6 +17,7 @@ the matching engine, ledger journals, settlement, the market-data projection.
 stack. Determinism is what makes crash replay and A/B comparisons possible.
 
 **Enforced by:**
+
 - `tsconfig` for core has `types: []`, so `process`, `Buffer` and timers do not compile.
 - ESLint bans `Date.now()`, `new Date()`, `Math.random` and float literals in core.
 - dependency-cruiser: core imports nothing; `app/` imports only core and its own ports;
@@ -26,11 +27,11 @@ stack. Determinism is what makes crash replay and A/B comparisons possible.
 
 `contracts/` is the source of truth. Code is generated from it, never the other way round.
 
-| Contract | Source | Generated |
-|---|---|---|
-| REST | `contracts/openapi/*.yaml` | `packages/contracts/src/gen/openapi` (openapi-typescript) |
-| Events | `contracts/proto/**/*.proto` | `packages/contracts/src/gen/proto` (protobuf-es) |
-| Database | `contracts/db/migrations/*.sql` | `packages/contracts/src/gen/db.ts` (kysely-codegen) |
+| Contract | Source                          | Generated                                                 |
+| -------- | ------------------------------- | --------------------------------------------------------- |
+| REST     | `contracts/openapi/*.yaml`      | `packages/contracts/src/gen/openapi` (openapi-typescript) |
+| Events   | `contracts/proto/**/*.proto`    | `packages/contracts/src/gen/proto` (protobuf-es)          |
+| Database | `contracts/db/migrations/*.sql` | `packages/contracts/src/gen/db.ts` (kysely-codegen)       |
 
 - HTTP routes are registered from the spec's `operationId`s. A spec operation without
   a handler fails at boot; a handler returning a body the spec does not allow fails to compile.

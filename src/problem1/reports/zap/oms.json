@@ -1,0 +1,715 @@
+{
+	"@programName": "ZAP",
+	"@version": "2.17.0",
+	"@generated": "Tue, 17 Nov 2026 10:03:27",
+	"created": "2026-11-17T10:03:27.214592092Z",
+	"insights":[
+		{
+			"level": "Medium",
+			"reason": "Exceeded High",
+			"site": "http://edge:8080",
+			"key": "insight.code.4xx",
+			"description": "Percentage of responses with status code 4xx",
+			"statistic": "99"
+		},
+		{
+			"level": "Info",
+			"reason": "Informational",
+			"site": "http://edge:8080",
+			"key": "insight.endpoint.ctype.application/problem+json",
+			"description": "Percentage of endpoints with content type application/problem+json",
+			"statistic": "97"
+		},
+		{
+			"level": "Info",
+			"reason": "Informational",
+			"site": "http://edge:8080",
+			"key": "insight.endpoint.ctype.text/plain",
+			"description": "Percentage of endpoints with content type text/plain",
+			"statistic": "2"
+		},
+		{
+			"level": "Info",
+			"reason": "Informational",
+			"site": "http://edge:8080",
+			"key": "insight.endpoint.method.DELETE",
+			"description": "Percentage of endpoints with method DELETE",
+			"statistic": "4"
+		},
+		{
+			"level": "Info",
+			"reason": "Informational",
+			"site": "http://edge:8080",
+			"key": "insight.endpoint.method.GET",
+			"description": "Percentage of endpoints with method GET",
+			"statistic": "64"
+		},
+		{
+			"level": "Info",
+			"reason": "Informational",
+			"site": "http://edge:8080",
+			"key": "insight.endpoint.method.POST",
+			"description": "Percentage of endpoints with method POST",
+			"statistic": "31"
+		},
+		{
+			"level": "Info",
+			"reason": "Informational",
+			"site": "http://edge:8080",
+			"key": "insight.endpoint.total",
+			"description": "Count of total endpoints",
+			"statistic": "48"
+		},
+		{
+			"level": "Info",
+			"reason": "Informational",
+			"site": "http://edge:8080",
+			"key": "insight.response.slow",
+			"description": "Percentage of slow responses",
+			"statistic": "2"
+		}
+	],
+	"site":[ 
+		{
+			"@name": "http://edge:8080",
+			"@host": "edge",
+			"@port": "8080",
+			"@ssl": "false",
+			"alerts": [ 
+				{
+					"pluginid": "100000",
+					"alertRef": "100000-1",
+					"alert": "A Client Error response code was returned by the server",
+					"name": "A Client Error response code was returned by the server",
+					"riskcode": "0",
+					"confidence": "3",
+					"riskdesc": "Informational (High)",
+					"desc": "<p>A response code of 401 was returned by the server.</p><p>This may indicate that the application is failing to handle unexpected input correctly.</p><p>Raised by the 'Alert on HTTP Response Code Error' script</p>",
+					"instances":[ 
+						{
+							"id": "8",
+							"uri": "http://edge:8080/v1/orders/orderId",
+							"nodeName": "http:\/\/edge:8080\/v1\/orders\/orderId",
+							"method": "DELETE",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "2241",
+							"uri": "http://edge:8080/v1/orders/orderId/",
+							"nodeName": "http:\/\/edge:8080\/v1\/orders\/orderId\/",
+							"method": "DELETE",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "17",
+							"uri": "http://edge:8080",
+							"nodeName": "http:\/\/edge:8080",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2245",
+							"uri": "http://edge:8080/",
+							"nodeName": "http:\/\/edge:8080\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "11",
+							"uri": "http://edge:8080/5692393196928379521",
+							"nodeName": "http:\/\/edge:8080\/5692393196928379521",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2247",
+							"uri": "http://edge:8080/healthz/",
+							"nodeName": "http:\/\/edge:8080\/healthz\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "10",
+							"uri": "http://edge:8080/readyz",
+							"nodeName": "http:\/\/edge:8080\/readyz",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2248",
+							"uri": "http://edge:8080/readyz/",
+							"nodeName": "http:\/\/edge:8080\/readyz\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "18",
+							"uri": "http://edge:8080/v1",
+							"nodeName": "http:\/\/edge:8080\/v1",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2251",
+							"uri": "http://edge:8080/v1/",
+							"nodeName": "http:\/\/edge:8080\/v1\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "12",
+							"uri": "http://edge:8080/v1/258619800263968585",
+							"nodeName": "http:\/\/edge:8080\/v1\/258619800263968585",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "19",
+							"uri": "http://edge:8080/v1/auth",
+							"nodeName": "http:\/\/edge:8080\/v1\/auth",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2254",
+							"uri": "http://edge:8080/v1/auth/",
+							"nodeName": "http:\/\/edge:8080\/v1\/auth\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "13",
+							"uri": "http://edge:8080/v1/auth/8747331547755102833",
+							"nodeName": "http:\/\/edge:8080\/v1\/auth\/8747331547755102833",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2540",
+							"uri": "http://edge:8080/v1/auth/actuator/health",
+							"nodeName": "http:\/\/edge:8080\/v1\/auth\/actuator\/health",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2",
+							"uri": "http://edge:8080/v1/balances",
+							"nodeName": "http:\/\/edge:8080\/v1\/balances",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "2253",
+							"uri": "http://edge:8080/v1/balances/",
+							"nodeName": "http:\/\/edge:8080\/v1\/balances\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "26",
+							"uri": "http://edge:8080/v1/custody",
+							"nodeName": "http:\/\/edge:8080\/v1\/custody",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2255",
+							"uri": "http://edge:8080/v1/custody/",
+							"nodeName": "http:\/\/edge:8080\/v1\/custody\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "14",
+							"uri": "http://edge:8080/v1/custody/9187541713788762495",
+							"nodeName": "http:\/\/edge:8080\/v1\/custody\/9187541713788762495",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "31",
+							"uri": "http://edge:8080/v1/deposit-addresses",
+							"nodeName": "http:\/\/edge:8080\/v1\/deposit-addresses",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2257",
+							"uri": "http://edge:8080/v1/deposit-addresses/",
+							"nodeName": "http:\/\/edge:8080\/v1\/deposit-addresses\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "15",
+							"uri": "http://edge:8080/v1/deposit-addresses/9138523951107569828",
+							"nodeName": "http:\/\/edge:8080\/v1\/deposit-addresses\/9138523951107569828",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "3",
+							"uri": "http://edge:8080/v1/deposit-addresses/BTC",
+							"nodeName": "http:\/\/edge:8080\/v1\/deposit-addresses\/BTC",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "2258",
+							"uri": "http://edge:8080/v1/deposit-addresses/BTC/",
+							"nodeName": "http:\/\/edge:8080\/v1\/deposit-addresses\/BTC\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9",
+							"uri": "http://edge:8080/v1/fills?symbol=BTC-USDT&limit=50",
+							"nodeName": "http:\/\/edge:8080\/v1\/fills (limit,symbol)",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "2259",
+							"uri": "http://edge:8080/v1/fills/",
+							"nodeName": "http:\/\/edge:8080\/v1\/fills\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "36",
+							"uri": "http://edge:8080/v1/orders",
+							"nodeName": "http:\/\/edge:8080\/v1\/orders",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "5",
+							"uri": "http://edge:8080/v1/orders?symbol=BTC-USDT&status=open&limit=50",
+							"nodeName": "http:\/\/edge:8080\/v1\/orders (limit,status,symbol)",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "2261",
+							"uri": "http://edge:8080/v1/orders/",
+							"nodeName": "http:\/\/edge:8080\/v1\/orders\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "16",
+							"uri": "http://edge:8080/v1/orders/8209004679411485872",
+							"nodeName": "http:\/\/edge:8080\/v1\/orders\/8209004679411485872",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "7",
+							"uri": "http://edge:8080/v1/orders/orderId",
+							"nodeName": "http:\/\/edge:8080\/v1\/orders\/orderId",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "2262",
+							"uri": "http://edge:8080/v1/orders/orderId/",
+							"nodeName": "http:\/\/edge:8080\/v1\/orders\/orderId\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "1672",
+							"uri": "http://edge:8080/computeMetadata/v1/",
+							"nodeName": "http:\/\/edge:8080\/computeMetadata\/v1\/ ()({email,password})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "1669",
+							"uri": "http://edge:8080/latest/meta-data/",
+							"nodeName": "http:\/\/edge:8080\/latest\/meta-data\/ ()({email,password})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "1697",
+							"uri": "http://edge:8080/metadata/instance",
+							"nodeName": "http:\/\/edge:8080\/metadata\/instance ()({email,password})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "1707",
+							"uri": "http://edge:8080/metadata/v1",
+							"nodeName": "http:\/\/edge:8080\/metadata\/v1 ()({email,password})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "1679",
+							"uri": "http://edge:8080/opc/v1/instance/",
+							"nodeName": "http:\/\/edge:8080\/opc\/v1\/instance\/ ()({email,password})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "1690",
+							"uri": "http://edge:8080/opc/v2/instance/",
+							"nodeName": "http:\/\/edge:8080\/opc\/v2\/instance\/ ()({email,password})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "1710",
+							"uri": "http://edge:8080/openstack/latest/meta_data.json",
+							"nodeName": "http:\/\/edge:8080\/openstack\/latest\/meta_data.json ()({email,password})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "1",
+							"uri": "http://edge:8080/v1/auth/login",
+							"nodeName": "http:\/\/edge:8080\/v1\/auth\/login ()({email,password})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "75",
+							"uri": "http://edge:8080/v1/auth/login",
+							"nodeName": "http:\/\/edge:8080\/v1\/auth\/login ()({email,password})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "429",
+							"otherinfo": ""
+						},
+						{
+							"id": "2243",
+							"uri": "http://edge:8080/v1/auth/login/",
+							"nodeName": "http:\/\/edge:8080\/v1\/auth\/login\/ ()({email,password})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "0",
+							"uri": "http://edge:8080/v1/auth/register",
+							"nodeName": "http:\/\/edge:8080\/v1\/auth\/register ()({email,password})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "192",
+							"uri": "http://edge:8080/v1/auth/register",
+							"nodeName": "http:\/\/edge:8080\/v1\/auth\/register ()({email,password})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "409",
+							"otherinfo": ""
+						},
+						{
+							"id": "1966",
+							"uri": "http://edge:8080/v1/auth/register",
+							"nodeName": "http:\/\/edge:8080\/v1\/auth\/register ()({email,password})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "429",
+							"otherinfo": ""
+						},
+						{
+							"id": "2240",
+							"uri": "http://edge:8080/v1/auth/register/",
+							"nodeName": "http:\/\/edge:8080\/v1\/auth\/register\/ ()({email,password})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "4",
+							"uri": "http://edge:8080/v1/custody/deposits",
+							"nodeName": "http:\/\/edge:8080\/v1\/custody\/deposits ()({txId,address,asset,amount})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "2242",
+							"uri": "http://edge:8080/v1/custody/deposits/",
+							"nodeName": "http:\/\/edge:8080\/v1\/custody\/deposits\/ ()({txId,address,asset,amount})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "6",
+							"uri": "http://edge:8080/v1/orders",
+							"nodeName": "http:\/\/edge:8080\/v1\/orders ()({clientOrderId,symbol,side,type,timeInForce,price,quantity,quoteQuantity})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "2246",
+							"uri": "http://edge:8080/v1/orders/",
+							"nodeName": "http:\/\/edge:8080\/v1\/orders\/ ()({clientOrderId,symbol,side,type,timeInForce,price,quantity,quoteQuantity})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						}
+					],
+					"count": "51",
+					"systemic": false,
+					"solution": "",
+					"otherinfo": "",
+					"reference": "",
+					"cweid": "388",
+					"wascid": "20",
+					"sourceid": "15"
+				},
+				{
+					"pluginid": "10111",
+					"alertRef": "10111",
+					"alert": "Authentication Request Identified",
+					"name": "Authentication Request Identified",
+					"riskcode": "0",
+					"confidence": "3",
+					"riskdesc": "Informational (High)",
+					"desc": "<p>The given request has been identified as an authentication request. The 'Other Info' field contains a set of key=value lines which identify any relevant fields. If the request is in a context which has an Authentication Method set to \"Auto-Detect\" then this rule will change the authentication to match the request identified.</p>",
+					"instances":[ 
+						{
+							"id": "227",
+							"uri": "http://edge:8080/v1/auth/login",
+							"nodeName": "http:\/\/edge:8080\/v1\/auth\/login ()({email,password})",
+							"method": "POST",
+							"param": "email",
+							"attack": "",
+							"evidence": "password",
+							"otherinfo": "userParam=email\nuserValue=zaproxy@example.com\npasswordParam=password"
+						}
+					],
+					"count": "1",
+					"systemic": false,
+					"solution": "<p>This is an informational alert rather than a vulnerability and so there is nothing to fix.</p>",
+					"otherinfo": "<p>userParam=email</p><p>userValue=zaproxy@example.com</p><p>passwordParam=password</p>",
+					"reference": "<p>https://www.zaproxy.org/docs/desktop/addons/authentication-helper/auth-req-id/</p>",
+					"cweid": "-1",
+					"wascid": "-1",
+					"sourceid": "5"
+				},
+				{
+					"pluginid": "10049",
+					"alertRef": "10049-1",
+					"alert": "Non-Storable Content",
+					"name": "Non-Storable Content",
+					"riskcode": "0",
+					"confidence": "2",
+					"riskdesc": "Informational (Medium)",
+					"desc": "<p>The response contents are not storable by caching components such as proxy servers. If the response does not contain sensitive, personal or user-specific information, it may benefit from being stored and cached, to improve performance.</p>",
+					"instances":[ 
+						{
+							"id": "232",
+							"uri": "http://edge:8080/v1/orders/orderId",
+							"nodeName": "http:\/\/edge:8080\/v1\/orders\/orderId",
+							"method": "DELETE",
+							"param": "",
+							"attack": "",
+							"evidence": "DELETE ",
+							"otherinfo": ""
+						},
+						{
+							"id": "229",
+							"uri": "http://edge:8080/v1/balances",
+							"nodeName": "http:\/\/edge:8080\/v1\/balances",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "no-store",
+							"otherinfo": ""
+						},
+						{
+							"id": "230",
+							"uri": "http://edge:8080/v1/deposit-addresses/BTC",
+							"nodeName": "http:\/\/edge:8080\/v1\/deposit-addresses\/BTC",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "no-store",
+							"otherinfo": ""
+						},
+						{
+							"id": "231",
+							"uri": "http://edge:8080/v1/fills?symbol=BTC-USDT&limit=50",
+							"nodeName": "http:\/\/edge:8080\/v1\/fills (limit,symbol)",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "no-store",
+							"otherinfo": ""
+						},
+						{
+							"id": "233",
+							"uri": "http://edge:8080/v1/orders",
+							"nodeName": "http:\/\/edge:8080\/v1\/orders ()({clientOrderId,symbol,side,type,timeInForce,price,quantity,quoteQuantity})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "no-store",
+							"otherinfo": ""
+						}
+					],
+					"count": "5",
+					"systemic": true,
+					"solution": "<p>The content may be marked as storable by ensuring that the following conditions are satisfied:</p><p>The request method must be understood by the cache and defined as being cacheable (\"GET\", \"HEAD\", and \"POST\" are currently defined as cacheable)</p><p>The response status code must be understood by the cache (one of the 1XX, 2XX, 3XX, 4XX, or 5XX response classes are generally understood)</p><p>The \"no-store\" cache directive must not appear in the request or response header fields</p><p>For caching by \"shared\" caches such as \"proxy\" caches, the \"private\" response directive must not appear in the response</p><p>For caching by \"shared\" caches such as \"proxy\" caches, the \"Authorization\" header field must not appear in the request, unless the response explicitly allows it (using one of the \"must-revalidate\", \"public\", or \"s-maxage\" Cache-Control response directives)</p><p>In addition to the conditions above, at least one of the following conditions must also be satisfied by the response:</p><p>It must contain an \"Expires\" header field</p><p>It must contain a \"max-age\" response directive</p><p>For \"shared\" caches such as \"proxy\" caches, it must contain a \"s-maxage\" response directive</p><p>It must contain a \"Cache Control Extension\" that allows it to be cached</p><p>It must have a status code that is defined as cacheable by default (200, 203, 204, 206, 300, 301, 404, 405, 410, 414, 501).</p>",
+					"otherinfo": "",
+					"reference": "<p>https://datatracker.ietf.org/doc/html/rfc7234</p><p>https://datatracker.ietf.org/doc/html/rfc7231</p><p>https://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html</p>",
+					"cweid": "524",
+					"wascid": "13",
+					"sourceid": "15"
+				}
+			]
+		}
+	],
+	"sequences":[
+	]
+
+}

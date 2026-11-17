@@ -133,7 +133,18 @@ components:
       type: object
       additionalProperties: false
       required:
-        [symbol, base, quote, tickSize, lotSize, minNotional, maxPrice, maxQuantity, makerFeeRate, takerFeeRate]
+        [
+          symbol,
+          base,
+          quote,
+          tickSize,
+          lotSize,
+          minNotional,
+          maxPrice,
+          maxQuantity,
+          makerFeeRate,
+          takerFeeRate,
+        ]
       properties:
         symbol: { $ref: '#/components/schemas/Symbol' }
         base: { type: string }

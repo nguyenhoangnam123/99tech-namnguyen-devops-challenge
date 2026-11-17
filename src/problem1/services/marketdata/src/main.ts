@@ -61,6 +61,7 @@ async function main(): Promise<void> {
       maxConnections: config.WS_MAX_CONNECTIONS,
       depthLimit: 20,
       tickMs: config.WS_TICK_MS,
+      isCaughtUp: () => feed.isCaughtUp(),
     },
     logger,
     now,

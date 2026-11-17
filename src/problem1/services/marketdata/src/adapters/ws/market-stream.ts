@@ -17,6 +17,7 @@ export interface StreamOptions {
   readonly maxConnections: number;
   readonly depthLimit: number;
   readonly tickMs: number;
+  readonly isCaughtUp: () => boolean;
 }
 
 interface Client {
@@ -120,7 +121,12 @@ export class MarketStream {
     }
   }
 
+  // During replay the book is partial; clients get it once caught up.
   private sendSnapshot(client: Client, channel: string): void {
+    if (!this.options.isCaughtUp()) {
+      send(client.socket, { error: 'replaying, data follows shortly' });
+      return;
+    }
     const [kind, symbol = ''] = channel.split(':');
     const view = this.marketData.view(symbol);
     if (!view) return;
@@ -133,6 +139,7 @@ export class MarketStream {
 
   private publishUpdates(): void {
     const { depth, trades } = this.marketData.drain();
+    if (!this.options.isCaughtUp()) return;
     for (const symbol of depth) {
       const view = this.marketData.view(symbol);
       const channel = `depth:${symbol}`;

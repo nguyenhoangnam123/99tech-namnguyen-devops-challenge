@@ -14,17 +14,17 @@ const rows = [
   ['p99 balances (ms)', 'http_req_duration{scenario:balances}', 'p(99)'],
   ['p99 depth (ms)', 'http_req_duration{scenario:depth}', 'p(99)'],
   ['max all load (ms)', 'http_req_duration{phase:load}', 'max'],
-  ['error rate', 'http_req_failed{phase:load}', 'value'],
+  ['error rate (%)', 'http_req_failed{phase:load}', 'value', 100],
   ['dropped iterations', 'dropped_iterations', 'count'],
 ];
 
-const value = (metrics, name, stat) => metrics[name]?.[stat] ?? 0;
-const format = (n) => (Number.isInteger(n) ? String(n) : n.toFixed(2));
+const value = (metrics, name, stat, scale = 1) => (metrics[name]?.[stat] ?? 0) * scale;
+const format = (n) => (Number.isInteger(n) || n >= 100 ? n.toFixed(0) : n.toPrecision(3));
 const delta = (x, y) => (x === 0 ? 'n/a' : `${(((y - x) / x) * 100).toFixed(1)}%`);
 
 console.log(`| metric | A ${basename(fileA, '.json')} | B ${basename(fileB, '.json')} | change |`);
 console.log('|---|---:|---:|---:|');
-for (const [label, name, stat] of rows) {
-  const [x, y] = [value(a, name, stat), value(b, name, stat)];
+for (const [label, name, stat, scale] of rows) {
+  const [x, y] = [value(a, name, stat, scale), value(b, name, stat, scale)];
   console.log(`| ${label} | ${format(x)} | ${format(y)} | ${delta(x, y)} |`);
 }

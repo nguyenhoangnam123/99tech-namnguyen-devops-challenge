@@ -50,7 +50,8 @@ export function omsHandlers(deps: HttpDeps): OperationHandlers<OmsApi.operations
     },
 
     login: async ({ body, clientIp }) => {
-      if (!(await limits.allowLogin(clientIp, body.email))) return problem(429, 'RATE_LIMITED');
+      const allowed = await limits.allowLogin(clientIp, body.email);
+      if (allowed !== 'OK') return problem(429, allowed);
       const result = await accounts.login(body.email, body.password);
       if (!result.ok) return problem(401, result.error);
       await limits.loginSucceeded(body.email);

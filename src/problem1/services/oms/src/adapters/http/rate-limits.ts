@@ -26,9 +26,12 @@ export class RateLimits {
 
   // Every attempt is counted atomically before the password is checked,
   // so concurrent guesses cannot race past the limit. Success clears it.
-  async allowLogin(clientIp: string, email: string): Promise<boolean> {
-    if (!(await consume(this.authByIp, clientIp))) return false;
-    return consume(this.loginAttempts, email.toLowerCase());
+  async allowLogin(
+    clientIp: string,
+    email: string,
+  ): Promise<'OK' | 'RATE_LIMITED' | 'ACCOUNT_LOCKED'> {
+    if (!(await consume(this.authByIp, clientIp))) return 'RATE_LIMITED';
+    return (await consume(this.loginAttempts, email.toLowerCase())) ? 'OK' : 'ACCOUNT_LOCKED';
   }
 
   async loginSucceeded(email: string): Promise<void> {

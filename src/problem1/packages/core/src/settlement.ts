@@ -120,8 +120,10 @@ function assertParties(trade: TradeEvent, maker: OrderFunds, taker: OrderFunds):
   if (isFinal(maker.status) || isFinal(taker.status)) {
     throw new InvariantViolation(`Trade ${trade.eventId} hits a closed order`);
   }
-  if (maker.limitPrice === null)
-    throw new InvariantViolation(`Maker ${maker.orderId} is not a limit`);
+  // Price-time priority always trades at the resting maker's price.
+  if (trade.price !== maker.limitPrice) {
+    throw new InvariantViolation(`Trade ${trade.eventId} is not at the maker's price`);
+  }
   for (const order of [maker, taker]) assertWithinTerms(trade, order);
 }
 

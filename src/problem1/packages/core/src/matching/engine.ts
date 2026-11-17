@@ -58,12 +58,12 @@ export class MatchingEngine {
         stoppedBy = 'SELF_TRADE';
         break;
       }
+      const quantity = taker.fillableAgainst(maker.remaining, level.price);
+      if (quantity === 0n) break;
       if (taker.fills === this.maxFills) {
         stoppedBy = 'FILL_LIMIT';
         break;
       }
-      const quantity = taker.fillableAgainst(maker.remaining, level.price);
-      if (quantity === 0n) break;
 
       book.fillBest(quantity);
       taker.fill(quantity, level.price);

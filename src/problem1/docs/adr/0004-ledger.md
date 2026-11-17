@@ -20,5 +20,8 @@
   that can race. The e2e double-spend test fires concurrent orders to prove it.
 - A refused journal leaves the transaction unusable. The unit of work refuses to report
   success after one, so a caller cannot commit a silent rollback.
-- Deferred to wave 2: a separate app database role that cannot disable triggers, and a
-  scheduled reconciliation of balances against the journal (the e2e suite runs it today).
+- Deferred to wave 2:
+  - A separate app database role that cannot disable triggers.
+  - Balances maintained by a statement-level trigger over the inserted journal rows,
+    replacing the app's own update, so balance drift becomes impossible by construction.
+    Until then the e2e suite reconciles balances against the journal after every file.

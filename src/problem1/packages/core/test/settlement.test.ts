@@ -105,7 +105,7 @@ describe('settleTrade', () => {
 
   it.each<[string, Partial<TradeEvent>, Partial<OrderFunds>, Partial<OrderFunds>]>([
     ['above the buy limit', { price: amt('111') }, { limitPrice: amt('111') }, {}],
-    ['below the sell limit', { price: amt('99') }, {}, {}],
+    ['away from the maker price', { price: amt('101') }, {}, {}],
     ['beyond the order size', {}, {}, { orderQuantity: amt('1.5') }],
     ['on another market', { symbol: 'ETH-USDT' }, {}, {}],
     ['against a market maker', {}, { limitPrice: null }, {}],
@@ -118,6 +118,20 @@ describe('settleTrade', () => {
         BTC,
       ),
     ).toThrow(InvariantViolation);
+  });
+
+  it('stops the line when a selling taker trades below its limit', () => {
+    const sellTrade: TradeEvent = {
+      ...trade,
+      takerSide: 'SELL',
+      makerOrderId: 'bid',
+      takerOrderId: 'ask',
+      price: amt('100'),
+    };
+    const buyMaker = { ...bid, limitPrice: amt('100') };
+    const sellTaker = { ...ask, limitPrice: amt('101') };
+
+    expect(() => settleTrade(sellTrade, buyMaker, sellTaker, BTC)).toThrow(/breaks the terms/);
   });
 
   it('refuses trades that do not match their orders', () => {

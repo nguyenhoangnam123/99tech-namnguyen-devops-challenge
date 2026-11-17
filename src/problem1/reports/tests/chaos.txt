@@ -1,0 +1,40 @@
+CHAOS=1 npx vitest run --project e2e tests/e2e/resilience.test.ts
+
+ RUN  v5.1.0 /Users/namnh21894/Documents/tech99/99tech-devops-challenge/src/problem1
+
+ Container exchange-matcher-1  Restarting
+ Container exchange-matcher-1  Started
+ Container exchange-oms-settler-1  Killing
+ Container exchange-oms-settler-1  Killed
+ Container exchange-redis-1  Running
+ Container exchange-postgres-1  Running
+ Container exchange-kafka-1  Running
+ Container exchange-migrate-1  Created
+ Container exchange-kafka-init-1  Created
+ Container exchange-oms-api-1  Running
+ Container exchange-oms-api-2  Running
+ Container exchange-oms-settler-1  Created
+ Container exchange-kafka-1  Waiting
+ Container exchange-postgres-1  Waiting
+ Container exchange-kafka-1  Healthy
+ Container exchange-postgres-1  Healthy
+ Container exchange-kafka-init-1  Starting
+ Container exchange-migrate-1  Starting
+ Container exchange-migrate-1  Started
+ Container exchange-migrate-1  Waiting
+ Container exchange-redis-1  Waiting
+ Container exchange-kafka-init-1  Started
+ Container exchange-redis-1  Healthy
+ Container exchange-migrate-1  Exited
+ Container exchange-kafka-init-1  Waiting
+ Container exchange-migrate-1  Waiting
+ Container exchange-migrate-1  Exited
+ Container exchange-kafka-init-1  Exited
+ Container exchange-oms-settler-1  Starting
+ Container exchange-oms-settler-1  Started
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  16:55:53
+   Duration  13.04s (tests 100%)
+
