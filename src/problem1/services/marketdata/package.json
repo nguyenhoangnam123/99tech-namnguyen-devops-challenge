@@ -1,0 +1,23 @@
+{
+  "name": "@exchange/marketdata",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node dist/main.js",
+    "dev": "tsx --conditions=@exchange/source src/main.ts"
+  },
+  "dependencies": {
+    "@exchange/codecs": "*",
+    "@exchange/contracts": "*",
+    "@exchange/core": "*",
+    "@exchange/platform": "*",
+    "ajv": "8.20.0",
+    "ws": "8.23.0",
+    "yaml": "2.9.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/ws": "8.18.2"
+  }
+}

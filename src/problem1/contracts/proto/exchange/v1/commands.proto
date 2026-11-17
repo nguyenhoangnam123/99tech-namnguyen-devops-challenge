@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package exchange.v1;
+
+import "exchange/v1/types.proto";
+
+// Published by oms through the outbox, keyed by symbol.
+// The partition order per symbol is the matching sequence.
+message OrderCommand {
+  string command_id = 1;
+  string symbol = 2;
+  // RFC 3339 UTC; the matcher never reads its own clock.
+  string issued_at = 3;
+
+  oneof kind {
+    PlaceOrder place = 10;
+    CancelOrder cancel = 11;
+  }
+}
+
+message PlaceOrder {
+  string order_id = 1;
+  string user_id = 2;
+  Side side = 3;
+  OrderType type = 4;
+  TimeInForce time_in_force = 5;
+  optional string price = 6;
+  optional string quantity = 7;
+  optional string quote_quantity = 8;
+}
+
+message CancelOrder {
+  string order_id = 1;
+  string user_id = 2;
+}

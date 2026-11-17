@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package exchange.v1;
+
+import "exchange/v1/types.proto";
+
+// One batch per command, written in the same Kafka transaction
+// as the command offset. Event ids derive from the command id.
+message MatcherEventBatch {
+  string command_id = 1;
+  string symbol = 2;
+  repeated MatcherEvent events = 3;
+}
+
+message MatcherEvent {
+  string event_id = 1;
+
+  oneof kind {
+    Trade trade = 10;
+    OrderDone order_done = 11;
+    CancelRejected cancel_rejected = 12;
+    BookLevel book_level = 13;
+  }
+}
+
+message Trade {
+  string trade_id = 1;
+  string price = 2;
+  string quantity = 3;
+  Side taker_side = 4;
+  string maker_order_id = 5;
+  string maker_user_id = 6;
+  string taker_order_id = 7;
+  string taker_user_id = 8;
+  string executed_at = 9;
+}
+
+enum FinalStatus {
+  FINAL_STATUS_UNSPECIFIED = 0;
+  FINAL_STATUS_FILLED = 1;
+  FINAL_STATUS_CANCELLED = 2;
+  FINAL_STATUS_EXPIRED = 3;
+}
+
+enum DoneReason {
+  DONE_REASON_UNSPECIFIED = 0;
+  DONE_REASON_FILLED = 1;
+  DONE_REASON_USER_CANCEL = 2;
+  DONE_REASON_IOC_REMAINDER = 3;
+  DONE_REASON_SELF_TRADE = 4;
+  DONE_REASON_NO_LIQUIDITY = 5;
+}
+
+// Terminal state; settlement releases whatever is still held.
+message OrderDone {
+  string order_id = 1;
+  string user_id = 2;
+  FinalStatus status = 3;
+  DoneReason reason = 4;
+}
+
+message CancelRejected {
+  string order_id = 1;
+  string user_id = 2;
+}
+
+// Absolute level size after the command; zero removes the level.
+message BookLevel {
+  Side side = 1;
+  string price = 2;
+  string quantity = 3;
+}

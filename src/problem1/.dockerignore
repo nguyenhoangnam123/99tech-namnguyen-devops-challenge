@@ -1,0 +1,11 @@
+**/node_modules
+**/dist
+**/*.tsbuildinfo
+**/test
+coverage
+reports
+tests/**
+!tests/package.json
+deploy
+docs
+.git

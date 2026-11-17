@@ -1,0 +1,20 @@
+{
+  "name": "@exchange/oms",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node dist/main.js",
+    "dev": "tsx --conditions=@exchange/source src/main.ts"
+  },
+  "dependencies": {
+    "@exchange/codecs": "*",
+    "@exchange/contracts": "*",
+    "@exchange/core": "*",
+    "@exchange/platform": "*",
+    "ioredis": "5.11.1",
+    "jose": "6.2.17",
+    "rate-limiter-flexible": "11.5.0",
+    "zod": "4.6.7"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "@exchange/codecs",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "@exchange/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@exchange/contracts": "*",
+    "@exchange/core": "*"
+  }
+}

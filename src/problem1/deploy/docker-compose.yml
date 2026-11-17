@@ -1,0 +1,234 @@
+name: exchange
+
+x-app: &app
+  image: exchange:${IMAGE_TAG:-local}
+  restart: unless-stopped
+  init: true
+  read_only: true
+  security_opt: [no-new-privileges:true]
+  cap_drop: [ALL]
+  deploy:
+    resources:
+      limits: { cpus: '1.0', memory: 512m }
+
+x-app-env: &app-env
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  HTTP_PORT: '3000'
+  KAFKA_BROKERS: kafka:9092
+  DATABASE_URL: postgres://exchange:${POSTGRES_PASSWORD:?run make secrets}@postgres:5432/exchange
+  VALIDATE_RESPONSES: ${VALIDATE_RESPONSES:-true}
+
+x-ready: &ready
+  test:
+    - CMD
+    - /nodejs/bin/node
+    - -e
+    - "fetch('http://127.0.0.1:3000/readyz').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+  interval: 3s
+  timeout: 2s
+  retries: 40
+
+services:
+  postgres:
+    image: postgres:17.12-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: exchange
+      POSTGRES_USER: exchange
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run make secrets}
+    command: [postgres, -c, max_connections=200, -c, shared_buffers=256MB]
+    ports: ['127.0.0.1:${PG_PORT:-15432}:5432']
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U exchange -d exchange]
+      interval: 2s
+      retries: 30
+    deploy:
+      resources:
+        limits: { cpus: '2.0', memory: 1g }
+
+  migrate:
+    image: amacneil/dbmate:2.38.1
+    command: [--no-dump-schema, --wait, up]
+    environment:
+      DATABASE_URL: postgres://exchange:${POSTGRES_PASSWORD}@postgres:5432/exchange?sslmode=disable
+      DBMATE_MIGRATIONS_DIR: /db/migrations
+    volumes: [../contracts/db:/db:ro]
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  kafka:
+    image: apache/kafka:4.1.2
+    restart: unless-stopped
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+    volumes: [kafkadata:/var/lib/kafka/data]
+    healthcheck:
+      test: [CMD-SHELL, /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+    deploy:
+      resources:
+        limits: { cpus: '1.5', memory: 1g }
+
+  # Infinite retention: the command log is the matcher's source of truth.
+  kafka-init:
+    image: apache/kafka:4.1.2
+    entrypoint: [/bin/sh, -c]
+    command:
+      - |
+        for topic in orders.commands matcher.events; do
+          /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists \
+            --topic "$$topic" --partitions 3 --replication-factor 1 --config retention.ms=-1
+        done
+    depends_on:
+      kafka: { condition: service_healthy }
+
+  redis:
+    image: redis:7.4.12-alpine
+    restart: unless-stopped
+    command:
+      [
+        redis-server,
+        --save,
+        '',
+        --appendonly,
+        'no',
+        --maxmemory,
+        128mb,
+        --maxmemory-policy,
+        allkeys-lru,
+      ]
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 2s
+      retries: 30
+
+  oms-api:
+    <<: *app
+    build: { context: .., dockerfile: Dockerfile }
+    command: [services/oms/dist/main.js]
+    environment:
+      <<: *app-env
+      OMS_ROLE: api
+      REDIS_URL: redis://redis:6379
+      JWT_PRIVATE_KEY_FILE: /run/secrets/jwt_private_key
+      CUSTODY_WEBHOOK_SECRET_FILE: /run/secrets/custody_webhook_secret
+      AUTH_RATE_LIMIT_PER_MINUTE: ${AUTH_RATE_LIMIT_PER_MINUTE:-300}
+      LOGIN_ATTEMPTS_PER_15_MINUTES: ${LOGIN_ATTEMPTS_PER_15_MINUTES:-10}
+      ORDER_RATE_LIMIT_PER_SECOND: ${ORDER_RATE_LIMIT_PER_SECOND:-20}
+      DATABASE_POOL_SIZE: '20'
+    secrets: [jwt_private_key, custody_webhook_secret]
+    healthcheck: *ready
+    deploy:
+      replicas: ${OMS_API_REPLICAS:-2}
+      resources:
+        limits: { cpus: '1.0', memory: 512m }
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+
+  oms-relay:
+    <<: *app
+    command: [services/oms/dist/main.js]
+    environment:
+      <<: *app-env
+      OMS_ROLE: relay
+      DATABASE_POOL_SIZE: '4'
+    healthcheck: *ready
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      kafka-init: { condition: service_completed_successfully }
+      oms-api: { condition: service_started }
+
+  oms-settler:
+    <<: *app
+    command: [services/oms/dist/main.js]
+    environment:
+      <<: *app-env
+      OMS_ROLE: settler
+      DATABASE_POOL_SIZE: '4'
+    healthcheck: *ready
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      kafka-init: { condition: service_completed_successfully }
+      oms-api: { condition: service_started }
+
+  matcher:
+    <<: *app
+    command: [services/matcher/dist/main.js]
+    environment:
+      <<: *app-env
+    healthcheck: *ready
+    depends_on:
+      kafka-init: { condition: service_completed_successfully }
+      oms-api: { condition: service_started }
+
+  marketdata:
+    <<: *app
+    command: [services/marketdata/dist/main.js]
+    environment:
+      <<: *app-env
+    healthcheck: *ready
+    depends_on:
+      kafka-init: { condition: service_completed_successfully }
+      oms-api: { condition: service_started }
+
+  edge:
+    image: nginx:1.28.1-alpine
+    restart: unless-stopped
+    ports: ['127.0.0.1:${EDGE_PORT:-18080}:8080']
+    volumes: [./nginx/nginx.conf:/etc/nginx/nginx.conf:ro]
+    tmpfs: [/var/cache/nginx, /var/run]
+    healthcheck:
+      test: [CMD, wget, -qO-, http://127.0.0.1:8080/healthz]
+      interval: 3s
+      retries: 20
+    depends_on:
+      oms-api: { condition: service_healthy }
+      marketdata: { condition: service_healthy }
+
+  prometheus:
+    image: prom/prometheus:v3.13.3
+    profiles: [obs]
+    command: [--config.file=/etc/prometheus/prometheus.yml, --storage.tsdb.retention.time=2d]
+    ports: ['127.0.0.1:${PROMETHEUS_PORT:-19090}:9090']
+    volumes: [./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro]
+
+  grafana:
+    image: grafana/grafana:12.3.11
+    profiles: [obs]
+    ports: ['127.0.0.1:${GRAFANA_PORT:-13000}:3000']
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: 'true'
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes: [./grafana/provisioning:/etc/grafana/provisioning:ro]
+    depends_on: [prometheus]
+
+  k6:
+    image: grafana/k6:1.8.3
+    profiles: [tools]
+    volumes: [../tests/perf:/scripts:ro, ../reports:/reports]
+    environment:
+      BASE_URL: http://edge:8080
+    entrypoint: [k6]
+
+secrets:
+  jwt_private_key: { file: .secrets/jwt-private-key.pem }
+  custody_webhook_secret: { file: .secrets/custody-webhook-secret }
+
+volumes:
+  pgdata:
+  kafkadata:

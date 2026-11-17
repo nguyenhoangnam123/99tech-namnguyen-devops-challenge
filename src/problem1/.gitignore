@@ -1,0 +1,7 @@
+node_modules
+dist
+*.tsbuildinfo
+coverage
+deploy/.env
+deploy/.secrets
+reports/tmp

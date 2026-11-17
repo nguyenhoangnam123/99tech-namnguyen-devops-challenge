@@ -1,0 +1,17 @@
+{
+  "name": "@exchange/matcher",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node dist/main.js",
+    "dev": "tsx --conditions=@exchange/source src/main.ts"
+  },
+  "dependencies": {
+    "@exchange/codecs": "*",
+    "@exchange/contracts": "*",
+    "@exchange/core": "*",
+    "@exchange/platform": "*",
+    "zod": "4.6.7"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "@exchange/contracts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "@exchange/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "2.17.0",
+    "kysely": "0.29.9"
+  }
+}

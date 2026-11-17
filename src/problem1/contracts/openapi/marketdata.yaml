@@ -1,0 +1,269 @@
+openapi: 3.0.3
+info:
+  title: Exchange Market Data API
+  version: 1.0.0
+  description: Public market data. WebSocket payloads are the Ws* schemas, served on /v1/ws.
+servers:
+  - url: http://localhost:8080
+tags:
+  - name: market
+  - name: ops
+
+paths:
+  /v1/markets:
+    get:
+      operationId: listMarkets
+      tags: [market]
+      responses:
+        '200':
+          description: Tradable markets and their rules
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MarketList' }
+
+  /v1/markets/{symbol}/depth:
+    get:
+      operationId: getDepth
+      tags: [market]
+      parameters:
+        - $ref: '#/components/parameters/Symbol'
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: Aggregated order book, best price first
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Depth' }
+        '400': { $ref: '#/components/responses/Problem' }
+
+  /v1/markets/{symbol}/trades:
+    get:
+      operationId: getRecentTrades
+      tags: [market]
+      parameters:
+        - $ref: '#/components/parameters/Symbol'
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+      responses:
+        '200':
+          description: Recent public trades, newest first
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TradeList' }
+        '400': { $ref: '#/components/responses/Problem' }
+
+  /v1/markets/{symbol}/ticker:
+    get:
+      operationId: getTicker
+      tags: [market]
+      parameters:
+        - $ref: '#/components/parameters/Symbol'
+      responses:
+        '200':
+          description: Rolling 24 hour statistics
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ticker' }
+        '400': { $ref: '#/components/responses/Problem' }
+
+  /healthz:
+    get:
+      operationId: liveness
+      tags: [ops]
+      responses:
+        '200':
+          description: Process is up
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Health' }
+
+  /readyz:
+    get:
+      operationId: readiness
+      tags: [ops]
+      responses:
+        '200':
+          description: Caught up with the event log
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Health' }
+        '503':
+          description: Still replaying
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Health' }
+
+components:
+  parameters:
+    Symbol:
+      name: symbol
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Symbol' }
+
+  responses:
+    Problem:
+      description: RFC 9457 problem details
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+  schemas:
+    Decimal:
+      type: string
+      pattern: '^(0|[1-9][0-9]{0,17})(\.[0-9]{1,18})?$'
+    NullableDecimal:
+      type: string
+      nullable: true
+      pattern: '^(0|[1-9][0-9]{0,17})(\.[0-9]{1,18})?$'
+    Symbol:
+      type: string
+      enum: [BTC-USDT, ETH-USDT]
+    Side:
+      type: string
+      enum: [BUY, SELL]
+
+    Market:
+      type: object
+      additionalProperties: false
+      required: [symbol, base, quote, tickSize, lotSize, minNotional, makerFeeRate, takerFeeRate]
+      properties:
+        symbol: { $ref: '#/components/schemas/Symbol' }
+        base: { type: string }
+        quote: { type: string }
+        tickSize: { $ref: '#/components/schemas/Decimal' }
+        lotSize: { $ref: '#/components/schemas/Decimal' }
+        minNotional: { $ref: '#/components/schemas/Decimal' }
+        makerFeeRate: { $ref: '#/components/schemas/Decimal' }
+        takerFeeRate: { $ref: '#/components/schemas/Decimal' }
+    MarketList:
+      type: object
+      additionalProperties: false
+      required: [markets]
+      properties:
+        markets:
+          type: array
+          items: { $ref: '#/components/schemas/Market' }
+
+    Level:
+      type: array
+      description: '[price, quantity]'
+      minItems: 2
+      maxItems: 2
+      items: { $ref: '#/components/schemas/Decimal' }
+    Depth:
+      type: object
+      additionalProperties: false
+      required: [symbol, bids, asks]
+      properties:
+        symbol: { $ref: '#/components/schemas/Symbol' }
+        bids:
+          type: array
+          items: { $ref: '#/components/schemas/Level' }
+        asks:
+          type: array
+          items: { $ref: '#/components/schemas/Level' }
+
+    PublicTrade:
+      type: object
+      additionalProperties: false
+      required: [tradeId, price, quantity, takerSide, executedAt]
+      properties:
+        tradeId: { type: string }
+        price: { $ref: '#/components/schemas/Decimal' }
+        quantity: { $ref: '#/components/schemas/Decimal' }
+        takerSide: { $ref: '#/components/schemas/Side' }
+        executedAt: { type: string, format: date-time }
+    TradeList:
+      type: object
+      additionalProperties: false
+      required: [symbol, trades]
+      properties:
+        symbol: { $ref: '#/components/schemas/Symbol' }
+        trades:
+          type: array
+          items: { $ref: '#/components/schemas/PublicTrade' }
+
+    Ticker:
+      type: object
+      additionalProperties: false
+      required: [symbol, lastPrice, open, high, low, volume, quoteVolume, tradeCount]
+      properties:
+        symbol: { $ref: '#/components/schemas/Symbol' }
+        lastPrice: { $ref: '#/components/schemas/NullableDecimal' }
+        open: { $ref: '#/components/schemas/NullableDecimal' }
+        high: { $ref: '#/components/schemas/NullableDecimal' }
+        low: { $ref: '#/components/schemas/NullableDecimal' }
+        volume: { $ref: '#/components/schemas/Decimal' }
+        quoteVolume: { $ref: '#/components/schemas/Decimal' }
+        tradeCount: { type: integer }
+
+    WsSubscribe:
+      type: object
+      additionalProperties: false
+      required: [op, channels]
+      properties:
+        op: { type: string, enum: [subscribe, unsubscribe] }
+        channels:
+          type: array
+          maxItems: 20
+          items: { type: string, pattern: '^(depth|trades|ticker):(BTC-USDT|ETH-USDT)$' }
+    WsDepth:
+      type: object
+      additionalProperties: false
+      required: [channel, data]
+      properties:
+        channel: { type: string }
+        data: { $ref: '#/components/schemas/Depth' }
+    WsTrades:
+      type: object
+      additionalProperties: false
+      required: [channel, data]
+      properties:
+        channel: { type: string }
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/PublicTrade' }
+    WsTicker:
+      type: object
+      additionalProperties: false
+      required: [channel, data]
+      properties:
+        channel: { type: string }
+        data: { $ref: '#/components/schemas/Ticker' }
+    WsError:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error: { type: string }
+
+    Health:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status: { type: string, enum: [ok, unavailable] }
+        checks:
+          type: object
+          additionalProperties: { type: string, enum: [ok, failed] }
+
+    Problem:
+      type: object
+      required: [type, title, status, code]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        code: { type: string }
+        detail: { type: string }
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              path: { type: string }
+              message: { type: string }

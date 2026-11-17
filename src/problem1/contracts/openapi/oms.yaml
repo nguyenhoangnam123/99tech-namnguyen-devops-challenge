@@ -1,0 +1,465 @@
+openapi: 3.0.3
+info:
+  title: Exchange OMS API
+  version: 1.0.0
+  description: Accounts, balances, deposits and orders. Market data lives in marketdata.yaml.
+servers:
+  - url: http://localhost:8080
+security:
+  - bearerAuth: []
+tags:
+  - name: auth
+  - name: account
+  - name: custody
+  - name: orders
+  - name: ops
+
+paths:
+  /v1/auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Credentials' }
+      responses:
+        '201':
+          description: Registered
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Registered' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '429': { $ref: '#/components/responses/Problem' }
+
+  /v1/auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Credentials' }
+      responses:
+        '200':
+          description: Access token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Token' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '429': { $ref: '#/components/responses/Problem' }
+
+  /v1/balances:
+    get:
+      operationId: listBalances
+      tags: [account]
+      responses:
+        '200':
+          description: Balances per asset
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BalanceList' }
+        '401': { $ref: '#/components/responses/Problem' }
+
+  /v1/deposit-addresses/{asset}:
+    get:
+      operationId: getDepositAddress
+      tags: [account]
+      parameters:
+        - $ref: '#/components/parameters/Asset'
+      responses:
+        '200':
+          description: The caller's deposit address for the asset
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DepositAddress' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+
+  /v1/custody/deposits:
+    post:
+      operationId: recordDeposit
+      tags: [custody]
+      description: Webhook from the custody provider. Retries and duplicates are expected.
+      security:
+        - custodySignature: []
+      parameters:
+        - name: X-Custody-Timestamp
+          in: header
+          required: true
+          schema: { type: string, pattern: '^[0-9]{13}$', description: Unix milliseconds }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DepositNotice' }
+      responses:
+        '200':
+          description: Recorded, or already recorded with the same content
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DepositReceipt' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+
+  /v1/orders:
+    post:
+      operationId: placeOrder
+      tags: [orders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PlaceOrderRequest' }
+      responses:
+        '201':
+          description: Accepted and funds held
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '200':
+          description: Replay of an earlier identical request
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '429': { $ref: '#/components/responses/Problem' }
+    get:
+      operationId: listOrders
+      tags: [orders]
+      parameters:
+        - name: symbol
+          in: query
+          schema: { $ref: '#/components/schemas/Symbol' }
+        - name: status
+          in: query
+          schema: { type: string, enum: [open, all], default: open }
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Orders, newest first
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderList' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+
+  /v1/orders/{orderId}:
+    parameters:
+      - name: orderId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      operationId: getOrder
+      tags: [orders]
+      responses:
+        '200':
+          description: Order
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    delete:
+      operationId: cancelOrder
+      tags: [orders]
+      responses:
+        '202':
+          description: Cancel requested; the matcher decides the outcome
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+
+  /v1/fills:
+    get:
+      operationId: listFills
+      tags: [orders]
+      parameters:
+        - name: symbol
+          in: query
+          schema: { $ref: '#/components/schemas/Symbol' }
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: The caller's fills, newest first
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FillList' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+
+  /healthz:
+    get:
+      operationId: liveness
+      tags: [ops]
+      security: []
+      responses:
+        '200':
+          description: Process is up
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Health' }
+
+  /readyz:
+    get:
+      operationId: readiness
+      tags: [ops]
+      security: []
+      responses:
+        '200':
+          description: Dependencies reachable
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Health' }
+        '503':
+          description: Not ready
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Health' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    custodySignature:
+      type: apiKey
+      in: header
+      name: X-Custody-Signature
+      description: hex(HMAC-SHA256(secret, timestamp + "." + rawBody))
+
+  parameters:
+    Asset:
+      name: asset
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Asset' }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+
+  responses:
+    Problem:
+      description: RFC 9457 problem details
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+  schemas:
+    Decimal:
+      type: string
+      pattern: '^(0|[1-9][0-9]{0,17})(\.[0-9]{1,18})?$'
+      maxLength: 37
+      example: '123.45'
+    NullableDecimal:
+      type: string
+      nullable: true
+      pattern: '^(0|[1-9][0-9]{0,17})(\.[0-9]{1,18})?$'
+    Asset:
+      type: string
+      enum: [BTC, ETH, USDT]
+    Symbol:
+      type: string
+      enum: [BTC-USDT, ETH-USDT]
+    Side:
+      type: string
+      enum: [BUY, SELL]
+    OrderType:
+      type: string
+      enum: [LIMIT, MARKET]
+    TimeInForce:
+      type: string
+      enum: [GTC, IOC]
+    OrderStatus:
+      type: string
+      enum: [NEW, PARTIALLY_FILLED, FILLED, CANCELLED, EXPIRED]
+
+    Credentials:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+        password: { type: string, minLength: 12, maxLength: 128 }
+    Registered:
+      type: object
+      additionalProperties: false
+      required: [userId]
+      properties:
+        userId: { type: string, format: uuid }
+    Token:
+      type: object
+      additionalProperties: false
+      required: [accessToken, tokenType, expiresIn]
+      properties:
+        accessToken: { type: string }
+        tokenType: { type: string, enum: [Bearer] }
+        expiresIn: { type: integer, description: Seconds }
+
+    Balance:
+      type: object
+      additionalProperties: false
+      required: [asset, available, held]
+      properties:
+        asset: { $ref: '#/components/schemas/Asset' }
+        available: { $ref: '#/components/schemas/Decimal' }
+        held: { $ref: '#/components/schemas/Decimal' }
+    BalanceList:
+      type: object
+      additionalProperties: false
+      required: [balances]
+      properties:
+        balances:
+          type: array
+          items: { $ref: '#/components/schemas/Balance' }
+
+    DepositAddress:
+      type: object
+      additionalProperties: false
+      required: [asset, address]
+      properties:
+        asset: { $ref: '#/components/schemas/Asset' }
+        address: { type: string }
+    DepositNotice:
+      type: object
+      additionalProperties: false
+      required: [txId, address, asset, amount]
+      properties:
+        txId: { type: string, minLength: 1, maxLength: 128, pattern: '^[A-Za-z0-9:_-]+$' }
+        address: { type: string, minLength: 1, maxLength: 128 }
+        asset: { $ref: '#/components/schemas/Asset' }
+        amount: { $ref: '#/components/schemas/Decimal' }
+    DepositReceipt:
+      type: object
+      additionalProperties: false
+      required: [txId, status, duplicate]
+      properties:
+        txId: { type: string }
+        status: { type: string, enum: [CREDITED, UNMATCHED] }
+        duplicate: { type: boolean }
+
+    PlaceOrderRequest:
+      type: object
+      additionalProperties: false
+      required: [clientOrderId, symbol, side, type]
+      description: LIMIT needs price and quantity. MARKET SELL needs quantity, MARKET BUY needs quoteQuantity.
+      properties:
+        clientOrderId: { type: string, pattern: '^[A-Za-z0-9_-]{1,36}$' }
+        symbol: { $ref: '#/components/schemas/Symbol' }
+        side: { $ref: '#/components/schemas/Side' }
+        type: { $ref: '#/components/schemas/OrderType' }
+        timeInForce: { $ref: '#/components/schemas/TimeInForce' }
+        price: { $ref: '#/components/schemas/Decimal' }
+        quantity: { $ref: '#/components/schemas/Decimal' }
+        quoteQuantity: { $ref: '#/components/schemas/Decimal' }
+    Order:
+      type: object
+      additionalProperties: false
+      required:
+        - orderId
+        - clientOrderId
+        - symbol
+        - side
+        - type
+        - timeInForce
+        - price
+        - quantity
+        - quoteQuantity
+        - filledQuantity
+        - filledQuote
+        - status
+        - cancelRequested
+        - createdAt
+        - updatedAt
+      properties:
+        orderId: { type: string, format: uuid }
+        clientOrderId: { type: string }
+        symbol: { $ref: '#/components/schemas/Symbol' }
+        side: { $ref: '#/components/schemas/Side' }
+        type: { $ref: '#/components/schemas/OrderType' }
+        timeInForce: { $ref: '#/components/schemas/TimeInForce' }
+        price: { $ref: '#/components/schemas/NullableDecimal' }
+        quantity: { $ref: '#/components/schemas/NullableDecimal' }
+        quoteQuantity: { $ref: '#/components/schemas/NullableDecimal' }
+        filledQuantity: { $ref: '#/components/schemas/Decimal' }
+        filledQuote: { $ref: '#/components/schemas/Decimal' }
+        status: { $ref: '#/components/schemas/OrderStatus' }
+        cancelRequested: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    OrderList:
+      type: object
+      additionalProperties: false
+      required: [orders]
+      properties:
+        orders:
+          type: array
+          items: { $ref: '#/components/schemas/Order' }
+
+    Fill:
+      type: object
+      additionalProperties: false
+      required: [tradeId, orderId, symbol, side, role, price, quantity, fee, feeAsset, executedAt]
+      properties:
+        tradeId: { type: string }
+        orderId: { type: string, format: uuid }
+        symbol: { $ref: '#/components/schemas/Symbol' }
+        side: { $ref: '#/components/schemas/Side' }
+        role: { type: string, enum: [MAKER, TAKER] }
+        price: { $ref: '#/components/schemas/Decimal' }
+        quantity: { $ref: '#/components/schemas/Decimal' }
+        fee: { $ref: '#/components/schemas/Decimal' }
+        feeAsset: { $ref: '#/components/schemas/Asset' }
+        executedAt: { type: string, format: date-time }
+    FillList:
+      type: object
+      additionalProperties: false
+      required: [fills]
+      properties:
+        fills:
+          type: array
+          items: { $ref: '#/components/schemas/Fill' }
+
+    Health:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status: { type: string, enum: [ok, unavailable] }
+        checks:
+          type: object
+          additionalProperties: { type: string, enum: [ok, failed] }
+
+    Problem:
+      type: object
+      required: [type, title, status, code]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        code: { type: string }
+        detail: { type: string }
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              path: { type: string }
+              message: { type: string }
