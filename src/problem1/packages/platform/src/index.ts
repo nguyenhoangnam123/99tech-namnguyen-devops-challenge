@@ -6,3 +6,4 @@ export * from './logger.js';
 export * from './metrics.js';
 export * from './postgres.js';
 export * from './bounded.js';
+export * from './telemetry.js';

@@ -4,7 +4,7 @@ SHELL := bash
 
 COMPOSE := docker compose --env-file deploy/.env -f deploy/docker-compose.yml
 
-.PHONY: help secrets up down nuke ps logs obs build lint typecheck test test-integration e2e chaos security perf gen check-gen ab
+.PHONY: help secrets up up-obs down nuke ps logs build lint typecheck test test-integration e2e chaos security perf gen check-gen ab
 
 help: ## List targets
 	@grep -E '^[a-z0-9-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-18s %s\n", $$1, $$2}'
@@ -27,8 +27,8 @@ ps: ## Show service status
 logs: ## Tail service logs
 	$(COMPOSE) logs -f --tail=100
 
-obs: ## Start Prometheus and Grafana
-	$(COMPOSE) --profile obs up -d prometheus grafana
+up-obs: secrets ## Stack plus OTel Collector and LGTM, telemetry on (Grafana :13000)
+	OTEL_SDK_DISABLED=false $(COMPOSE) --profile obs up -d --build --wait
 
 build: ## Compile all packages
 	npm run build

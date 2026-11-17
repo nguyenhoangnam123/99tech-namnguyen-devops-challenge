@@ -6,6 +6,8 @@ import {
   Histogram,
   LATENCY_BUCKETS,
   type Registry,
+  carrierFromHeaders,
+  withSpan,
 } from '@exchange/platform';
 import type { SettlementService } from '../../app/settlement.js';
 
@@ -43,7 +45,13 @@ export class SettlementConsumer {
         try {
           for (const message of batch.messages) {
             if (!message.value) continue;
-            const outcome = await this.settlement.apply(decodeEventBatch(message.value));
+            const events = decodeEventBatch(message.value);
+            const outcome = await withSpan(
+              'oms.settle',
+              carrierFromHeaders(message.headers),
+              () => this.settlement.apply(events),
+              { 'exchange.symbol': events.symbol, 'exchange.command_id': events.commandId },
+            );
             this.applied.inc({ outcome });
             this.lag.observe((Date.now() - Number(message.timestamp)) / 1000);
           }

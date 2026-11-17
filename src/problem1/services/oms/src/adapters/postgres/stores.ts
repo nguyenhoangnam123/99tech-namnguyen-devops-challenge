@@ -9,7 +9,7 @@ import {
   type OrderFunds,
   formatAmount,
 } from '@exchange/core';
-import type { Transaction } from '@exchange/platform';
+import { type Transaction, activeTraceCarrier } from '@exchange/platform';
 import type {
   CommandOutbox,
   DepositRecord,
@@ -182,6 +182,7 @@ export class PgCommandOutbox implements CommandOutbox {
         topic: TOPICS.orderCommands,
         message_key: command.symbol,
         payload: Buffer.from(encodeCommand(command)),
+        trace_parent: activeTraceCarrier().traceparent ?? null,
       })
       .execute();
   }

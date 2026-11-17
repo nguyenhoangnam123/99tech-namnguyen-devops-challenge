@@ -1,0 +1,42 @@
+# Monolithic Mimir on the local filesystem: the classic write path,
+# one replica, 24h retention. Same query API as production Mimir.
+multitenancy_enabled: false
+server:
+  http_listen_port: 9009
+  log_level: warn
+common:
+  storage:
+    backend: filesystem
+    filesystem: { dir: /data/mimir/objects }
+blocks_storage:
+  storage_prefix: blocks
+  tsdb: { dir: /data/mimir/tsdb }
+  bucket_store: { sync_dir: /data/mimir/tsdb-sync }
+ingester:
+  ring:
+    instance_addr: 127.0.0.1
+    replication_factor: 1
+    kvstore: { store: inmemory }
+distributor:
+  ring:
+    instance_addr: 127.0.0.1
+    kvstore: { store: inmemory }
+compactor:
+  data_dir: /data/mimir/compactor
+  sharding_ring:
+    instance_addr: 127.0.0.1
+    kvstore: { store: inmemory }
+store_gateway:
+  sharding_ring:
+    instance_addr: 127.0.0.1
+    replication_factor: 1
+    kvstore: { store: inmemory }
+ruler_storage:
+  backend: filesystem
+  filesystem: { dir: /data/mimir/rules }
+limits:
+  compactor_blocks_retention_period: 24h
+  max_global_exemplars_per_user: 100000
+  ingestion_rate: 200000
+  ingestion_burst_size: 400000
+usage_stats: { enabled: false }

@@ -1,0 +1,64 @@
+# Agent: one collector per host. Services and k6 send OTLP here; it also
+# scrapes service /metrics and reads container CPU and memory from Docker.
+receivers:
+  otlp:
+    protocols:
+      grpc: { endpoint: 0.0.0.0:4317 }
+      http: { endpoint: 0.0.0.0:4318 }
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: exchange
+          scrape_interval: 5s
+          dns_sd_configs:
+            - names: [oms-api, oms-relay, oms-settler, matcher, marketdata]
+              type: A
+              port: 3000
+          relabel_configs:
+            - source_labels: [__meta_dns_name]
+              target_label: role
+  docker_stats:
+    endpoint: unix:///var/run/docker.sock
+    collection_interval: 5s
+    container_labels_to_metric_labels:
+      com.docker.compose.project: compose_project
+      com.docker.compose.service: compose_service
+
+processors:
+  memory_limiter: { check_interval: 1s, limit_mib: 200 }
+  batch: { timeout: 2s }
+  # Docker reports every container on the host; keep this stack only.
+  filter/other-projects:
+    error_mode: ignore
+    metrics:
+      metric:
+        - IsMatch(name, "^container\\.") and resource.attributes["compose_project"] != "exchange"
+
+exporters:
+  otlp_grpc/tempo:
+    endpoint: tempo:4317
+    tls: { insecure: true }
+  otlp_http/loki:
+    endpoint: http://loki:3100/otlp
+  prometheus_remote_write/mimir:
+    endpoint: http://mimir:9009/api/v1/push
+    # Only the labels queries use; the rest would only add cardinality.
+    resource_constant_labels:
+      included: [container.name, compose_project, compose_service]
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp_grpc/tempo]
+    metrics:
+      receivers: [otlp, prometheus, docker_stats]
+      processors: [memory_limiter, filter/other-projects, batch]
+      exporters: [prometheus_remote_write/mimir]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp_http/loki]
+  telemetry:
+    logs: { level: warn }

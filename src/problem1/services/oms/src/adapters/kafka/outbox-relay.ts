@@ -78,7 +78,7 @@ export class OutboxRelay {
   async publishBatch(connection: Kysely<DB>): Promise<number> {
     const batch = await connection
       .selectFrom('outbox')
-      .select(['id', 'topic', 'message_key', 'payload'])
+      .select(['id', 'topic', 'message_key', 'payload', 'trace_parent'])
       .where('published_at', 'is', null)
       .orderBy('id')
       .limit(this.options.batchSize)
@@ -87,7 +87,11 @@ export class OutboxRelay {
     await this.producer.sendBatch({
       topicMessages: [...groupBy(batch, (row) => row.topic)].map(([topic, rows]) => ({
         topic,
-        messages: rows.map((row) => ({ key: row.message_key, value: row.payload })),
+        messages: rows.map((row) => ({
+          key: row.message_key,
+          value: row.payload,
+          headers: row.trace_parent ? { traceparent: row.trace_parent } : {},
+        })),
       })),
     });
     await connection

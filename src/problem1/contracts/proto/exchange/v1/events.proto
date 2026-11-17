@@ -6,6 +6,7 @@ import "exchange/v1/types.proto";
 
 // One batch per command, written in the same Kafka transaction
 // as the command offset. Event ids derive from the command id.
+// The Kafka header `traceparent` carries W3C trace context.
 message MatcherEventBatch {
   string command_id = 1;
   string symbol = 2;

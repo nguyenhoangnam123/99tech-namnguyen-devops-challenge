@@ -100,6 +100,7 @@ export interface Outbox {
   payload: Buffer;
   published_at: Timestamp | null;
   topic: string;
+  trace_parent: string | null;
 }
 
 export interface Users {
