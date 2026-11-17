@@ -1,4 +1,4 @@
-| metric | A A-dc4373a | B B-180b31f | change |
+| metric | A A-ec7869b | B B-b506779 | change |
 |---|---:|---:|---:|
 | p50 all load (ms) | 1.63 | 1.68 | 2.9% |
 | p95 all load (ms) | 6.46 | 6.02 | -6.8% |

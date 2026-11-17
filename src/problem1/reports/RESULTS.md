@@ -56,7 +56,7 @@ single-digit differences as noise.
 
 ## A/B: indexing the ledger account lookup
 
-`make ab A=dc4373a B=180b31f`: same scenario, fresh stack per side.
+`make ab A=ec7869b B=b506779`: same scenario, fresh stack per side.
 
 | Metric | A (sequential scan) | B (expression index) | Change |
 |---|---:|---:|---:|
