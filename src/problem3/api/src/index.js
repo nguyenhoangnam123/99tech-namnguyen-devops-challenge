@@ -45,4 +45,12 @@ app.get("/status", (req, res) => {
   res.json({ status: "ok" });
 });
 
-app.listen(3000, () => console.log("API running on 3000"));
+const server = app.listen(3000, () => console.log("API running on 3000"));
+
+// As PID 1, node ignores SIGTERM unless handled: finish requests, then exit.
+process.on("SIGTERM", () => {
+  server.close(async () => {
+    await Promise.allSettled([pool.end(), redis.quit()]);
+    process.exit(0);
+  });
+});

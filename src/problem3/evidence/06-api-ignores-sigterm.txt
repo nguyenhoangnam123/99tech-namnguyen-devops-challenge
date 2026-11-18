@@ -1,0 +1,15 @@
+# 06 The API ignores SIGTERM: every stop waits 10 s, then is killed
+
+node runs as PID 1 with no signal handler, so SIGTERM does nothing.
+
+$ time docker compose stop api
+Container problem3-api-1  Stopped     (10.6 s)
+
+$ docker inspect problem3-api-1
+exit code 137 (SIGKILL), init <nil>
+
+$ docker compose top api
+SERVICE # UID PID PPID C STIME TTY TIME CMD
+api 1 root 73438 73416 4 04:39 ? 00:00:00 node src/index.js
+
+After the fix: stop takes 0.6 s, exit code 0.
