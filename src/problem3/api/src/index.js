@@ -60,9 +60,11 @@ app.get("/status", (req, res) => {
 const server = app.listen(3000, () => console.log("API running on 3000"));
 
 // As PID 1, node ignores SIGTERM unless handled: finish requests, then exit.
+// Exit on our own before Docker's 10 s SIGKILL if a request will not finish.
 process.on("SIGTERM", () => {
-  server.close(async () => {
+  setTimeout(() => process.exit(1), 8_000).unref();
+  server.close(async (err) => {
     await Promise.allSettled([pool.end(), redis.quit()]);
-    process.exit(0);
+    process.exit(err ? 1 : 0);
   });
 });
