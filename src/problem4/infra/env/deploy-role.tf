@@ -62,6 +62,7 @@ data "aws_iam_policy_document" "deploy" {
     actions = [
       "autoscaling:DescribeAutoScalingGroups",
       "autoscaling:DescribeInstanceRefreshes",
+      "autoscaling:DescribeScalingActivities",
       "ec2:DescribeLaunchTemplateVersions",
       "ec2:DescribeLaunchTemplates",
     ]

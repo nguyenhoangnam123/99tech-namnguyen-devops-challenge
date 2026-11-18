@@ -28,16 +28,25 @@ new_version=$(aws ec2 create-launch-template-version --launch-template-id "$temp
 log "launch template $template version $new_version runs $version"
 
 alarms=$(field rollback_alarms | jq -c .)
+# Healthy-capacity bounds come from the group's maintenance policy.
 refresh=$(aws autoscaling start-instance-refresh --auto-scaling-group-name "$group" \
   --desired-configuration "{\"LaunchTemplate\": {\"LaunchTemplateId\": \"$template\", \"Version\": \"$new_version\"}}" \
-  --preferences "{\"MinHealthyPercentage\": 100, \"MaxHealthyPercentage\": 200, \"InstanceWarmup\": 60,
-    \"SkipMatching\": false, \"AutoRollback\": true,
+  --preferences "{\"InstanceWarmup\": 60, \"SkipMatching\": false, \"AutoRollback\": true,
     \"AlarmSpecification\": {\"Alarms\": $alarms}}" \
   --query InstanceRefreshId --output text)
 log "instance refresh $refresh started on $group"
+started=$(date -u +%Y-%m-%dT%H:%M:%S)
 
-deadline=$((SECONDS + 1500))
-while ((SECONDS < deadline)); do
+# Auto Scaling retries abandoned launches forever, so two of them,
+# or the deadline, mean the image is bad: roll back and fail.
+abandoned_launches() {
+  aws autoscaling describe-scaling-activities --auto-scaling-group-name "$group" --max-items 20 |
+    jq --arg t "$started" '[.Activities[] | select(.StartTime >= $t and .StatusCode == "Cancelled")] | length'
+}
+
+deadline=$((SECONDS + 1200))
+rolling_back=false
+while true; do
   read -r status percent < <(aws autoscaling describe-instance-refreshes \
     --auto-scaling-group-name "$group" --instance-refresh-ids "$refresh" \
     --query 'InstanceRefreshes[0].[Status, PercentageComplete]' --output text)
@@ -47,9 +56,13 @@ while ((SECONDS < deadline)); do
     Failed | Cancelled | RollbackSuccessful | RollbackFailed)
       fail "refresh ended $status; $group keeps the previous image" ;;
   esac
+  if ! $rolling_back && { (($(abandoned_launches) >= 2)) || ((SECONDS > deadline)); }; then
+    log "new instances never became healthy; rolling back"
+    aws autoscaling rollback-instance-refresh --auto-scaling-group-name "$group" >/dev/null
+    rolling_back=true
+  fi
   sleep 15
 done
-[[ $status == Successful ]] || fail "refresh did not finish in 25 minutes"
 
 aws ssm put-parameter --name "$(field image_tag_parameter)" --value "$version" --overwrite >/dev/null
 log "backend $version is live in $environment"
