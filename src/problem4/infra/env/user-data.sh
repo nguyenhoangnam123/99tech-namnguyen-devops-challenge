@@ -22,3 +22,13 @@ docker run -d --name backend --restart unless-stopped -p 80:8080 \
   --log-driver awslogs --log-opt awslogs-region=${region} \
   --log-opt awslogs-group=${log_group} --log-opt awslogs-stream="$instance" \
   "${repository}:$tag"
+
+# Join the load balancer only once the API answers here; otherwise
+# abandon, so Auto Scaling replaces the instance and the refresh fails.
+result=ABANDON
+for _ in $(seq 1 30); do
+  if curl -sf --max-time 2 http://127.0.0.1/healthz >/dev/null; then result=CONTINUE; break; fi
+  sleep 2
+done
+aws autoscaling complete-lifecycle-action --region ${region} --instance-id "$instance" \
+  --auto-scaling-group-name ${group} --lifecycle-hook-name ${hook} --lifecycle-action-result "$result"

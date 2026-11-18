@@ -97,6 +97,8 @@ resource "aws_launch_template" "backend" {
     repository  = data.aws_ecr_repository.backend.repository_url
     log_group   = aws_cloudwatch_log_group.backend.name
     environment = var.environment
+    group       = local.group_name
+    hook        = local.launch_hook
   }))
 
   iam_instance_profile {
@@ -136,8 +138,13 @@ resource "aws_launch_template" "backend" {
   }
 }
 
+locals {
+  group_name  = "${local.name}-backend"
+  launch_hook = "wait-for-api"
+}
+
 resource "aws_autoscaling_group" "backend" {
-  name                      = "${local.name}-backend"
+  name                      = local.group_name
   min_size                  = var.instances.min
   desired_capacity          = var.instances.desired
   max_size                  = var.instances.max
@@ -160,6 +167,16 @@ resource "aws_autoscaling_group" "backend" {
   lifecycle {
     ignore_changes = [launch_template]
   }
+}
+
+# New instances stay out of the ALB until user data reports the API
+# healthy. One that never does is abandoned, which fails the refresh.
+resource "aws_autoscaling_lifecycle_hook" "wait_for_api" {
+  name                   = local.launch_hook
+  autoscaling_group_name = aws_autoscaling_group.backend.name
+  lifecycle_transition   = "autoscaling:EC2_INSTANCE_LAUNCHING"
+  heartbeat_timeout      = 300
+  default_result         = "ABANDON"
 }
 
 # Either alarm firing during a refresh makes it roll back on its own.
@@ -228,6 +245,10 @@ data "aws_iam_policy_document" "backend_instance" {
   statement {
     actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
     resources = ["${aws_cloudwatch_log_group.backend.arn}:*"]
+  }
+  statement {
+    actions   = ["autoscaling:CompleteLifecycleAction"]
+    resources = ["arn:aws:autoscaling:${var.region}:${data.aws_caller_identity.current.account_id}:autoScalingGroup:*:autoScalingGroupName/${local.group_name}"]
   }
 }
 
