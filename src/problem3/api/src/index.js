@@ -10,6 +10,9 @@ const pool = new Pool({
   password: "postgres",
   database: "postgres",
   port: 5432,
+  // Fail fast when no connection is free, instead of waiting forever.
+  connectionTimeoutMillis: 2000,
+  statement_timeout: 5000,
 });
 // Postgres drops idle connections on restart; unhandled, that kills the process.
 pool.on("error", (err) => console.error("postgres idle client error:", err.message));
@@ -18,9 +21,8 @@ const redis = new Redis({ host: process.env.REDIS_HOST, port: 6379 });
 
 app.get("/api/users", async (req, res) => {
   try {
-    const db = await pool.connect();
-    const result = await db.query("SELECT NOW()");
-    db.release();
+    // pool.query returns the connection even when the query fails.
+    const result = await pool.query("SELECT NOW()");
 
     await redis.set("last_call", Date.now());
     res.json({ ok: true, time: result.rows[0] });
