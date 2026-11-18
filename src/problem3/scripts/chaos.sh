@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # Load /api/users at a steady rate and disrupt one dependency mid-run.
-# Usage: scripts/chaos.sh <none|restart-postgres|cancel-queries|stop-redis|recreate-api>
+# Usage: scripts/chaos.sh <action>; the actions are the cases below.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-action=${1:?usage: scripts/chaos.sh <none|restart-postgres|cancel-queries|stop-redis|recreate-api>}
+action=${1:?usage: scripts/chaos.sh <none|restart-postgres|cancel-queries|stop-redis|pause-postgres|recreate-api>}
 at=${AT:-15}
 out=$(mktemp -d)
+now_ms() { node -e 'console.log(Date.now())'; }
 cancel_for_10s="DO \$\$ DECLARE t timestamptz := clock_timestamp(); BEGIN
   WHILE clock_timestamp() < t + interval '10 seconds' LOOP
     PERFORM pg_stat_clear_snapshot();
@@ -13,24 +14,30 @@ cancel_for_10s="DO \$\$ DECLARE t timestamptz := clock_timestamp(); BEGIN
       WHERE backend_type = 'client backend' AND state = 'active' AND pid <> pg_backend_pid();
   END LOOP; END \$\$;"
 
+started=$(now_ms)
 k6 run -q --out "json=$out/points.json" -e "RATE=${RATE:-50}" -e "DURATION=${DURATION:-60s}" \
   scripts/load.js > "$out/k6.txt" 2>&1 &
 load=$!
 sleep "$at"
-echo "t=${at}s: $action"
+from=$(now_ms)
 case $action in
   none) ;;
   restart-postgres) docker compose restart postgres ;;
   # A query that fails but keeps its connection, like a DBA cancel or a timeout.
   cancel-queries) docker compose exec -T postgres psql -U postgres -qAt -c "$cancel_for_10s" ;;
   stop-redis) docker compose stop redis && sleep 15 && docker compose start redis ;;
+  # A frozen database or a dead network path: connections open, no answers.
+  pause-postgres) docker compose pause postgres && sleep 20 && docker compose unpause postgres ;;
   recreate-api) docker compose up -d --force-recreate --no-deps api ;;
   *) echo "unknown action: $action" >&2; exit 2 ;;
-esac 2>&1 | grep -v 'level=warning' || true
+esac > "$out/action.txt" 2>&1 || { cat "$out/action.txt"; exit 1; }
+to=$(now_ms)
 wait "$load" || true
 
 seconds=${DURATION:-60s}; seconds=${seconds%s}
 dropped=$(awk '/dropped_iterations/ {print $2}' "$out/k6.txt")
-node scripts/timeline.mjs "$out/points.json" "${BUCKET:-5}" "$(( ${RATE:-50} * seconds ))" "${dropped:-0}"
+node scripts/timeline.mjs "$out/points.json" "${BUCKET:-5}" "$(( ${RATE:-50} * seconds ))" \
+  "${dropped:-0}" "$started" "$from" "$to" "$action"
+echo
 docker compose ps -a --format 'table {{.Service}}\t{{.State}}\t{{.Status}}' 2>/dev/null
 rm -rf "$out"
