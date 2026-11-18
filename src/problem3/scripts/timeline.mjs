@@ -33,7 +33,7 @@ const sent = total.ms.length;
 const ok = total.status['200'] ?? 0;
 // Requests still hanging when k6 stops never report a duration.
 // Dropped: k6 had no free VU, as every VU was waiting on a hung request.
-const expected = Number(expectedArg) || sent;
+const expected = Math.max(Number(expectedArg) || 0, sent);
 const dropped = Number(droppedArg);
 const pct = (n) => `${((n / expected) * 100).toFixed(1)}%`;
 console.log(
