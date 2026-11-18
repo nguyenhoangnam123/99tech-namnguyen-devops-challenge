@@ -11,6 +11,8 @@ const pool = new Pool({
   database: "postgres",
   port: 5432,
 });
+// Postgres drops idle connections on restart; unhandled, that kills the process.
+pool.on("error", (err) => console.error("postgres idle client error:", err.message));
 
 const redis = new Redis({ host: process.env.REDIS_HOST, port: 6379 });
 

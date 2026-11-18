@@ -1,0 +1,41 @@
+# 02 A Postgres restart kills the API, and nothing restarts it
+
+Load: 50 req/s on /api/users for 60 s; `docker compose restart postgres` at t=15 s.
+$ scripts/chaos.sh restart-postgres
+response end  statuses                                              p99 ms
+  0-5   s     200:251                                              7
+  5-10  s     200:250                                              9
+ 10-15  s     200:241 502:5                                        7
+ 50-55  s     502:65                                               12614
+ 55-60  s     502:1                                                1465
+ 60-65  s     502:12                                               13270
+ 65-70  s     502:102                                              38145
+ 70-75  s     502:16 504:4                                         60009
+ 75-80  s     502:93 504:172                                       60015
+ 80-85  s     502:46 504:126                                       60016
+ 85-90  s     502:101 504:107                                      60014
+
+sent 3000: 742 ok (24.7%), 850 errors, 1408 no response; p99 60013 ms
+statuses: {"200":742,"502":441,"504":409}
+SERVICE    STATE     STATUS
+api        exited    Exited (1) About a minute ago
+nginx      running   Up 5 minutes
+postgres   running   Up About a minute
+redis      running   Up 5 minutes
+
+$ docker compose logs api
+      throw er; // Unhandled 'error' event
+error: terminating connection due to administrator command
+Emitted 'error' event on BoundPool instance at:
+    at Client.idleListener (/app/node_modules/pg-pool/index.js:62:10)
+  code: '57P01',
+
+$ docker inspect problem3-api-1
+exit code 1, restarts 0, restart policy "no"
+
+$ docker compose logs nginx --since <run start>  (counted by error)
+  435 connect() failed (113: No route to host)
+  410 upstream timed out (110: Connection timed out)
+    4 connect() failed (111: Connection refused)
+    1 recv() failed (104: Connection reset by peer)
+    1 recv() failed (113: No route to host)
