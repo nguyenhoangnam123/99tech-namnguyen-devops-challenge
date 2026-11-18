@@ -1,0 +1,17 @@
+# 01 /api/ is inaccessible: nginx proxies to port 3001, the API listens on 3000
+
+$ curl -s -o /dev/null -w "%{http_code}" localhost:8080<path>
+/           -> 200
+/api/users  -> 502
+
+$ docker compose logs nginx | grep upstream
+[error] 28#28: *2 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.65.1, server: , request: "GET /api/users HTTP/1.1", upstream: "http://172.27.0.4:3001/api/users", host: "localhost:8080"
+
+$ docker compose logs api
+API running on 3000
+
+$ docker compose exec api wget -qO- localhost:3000/api/users
+{"ok":true,"time":{"now":"2026-11-18T04:27:22.341Z"}}
+
+$ docker compose exec api wget -qO- localhost:3001/api/users
+wget: can't connect to remote host: Connection refused
