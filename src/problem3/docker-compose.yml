@@ -1,14 +1,13 @@
-version: "3.9"
-
 services:
   nginx:
     image: nginx:1.25
     ports:
       - "8080:80"
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
     depends_on:
       - api
+    restart: unless-stopped
 
   api:
     build: ./api
@@ -18,11 +17,14 @@ services:
     depends_on:
       - postgres
       - redis
+    restart: unless-stopped
 
   postgres:
     image: postgres:15
     environment:
       POSTGRES_PASSWORD: postgres
+    restart: unless-stopped
 
   redis:
     image: redis:7
+    restart: unless-stopped

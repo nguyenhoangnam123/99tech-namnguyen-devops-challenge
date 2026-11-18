@@ -39,3 +39,6 @@ $ docker compose logs nginx --since <run start>  (counted by error)
     4 connect() failed (111: Connection refused)
     1 recv() failed (104: Connection reset by peer)
     1 recv() failed (113: No route to host)
+
+After the fix, the API process killed from outside (as the OOM killer would):
+restarts 1, running again within a second; /api/users 200.
