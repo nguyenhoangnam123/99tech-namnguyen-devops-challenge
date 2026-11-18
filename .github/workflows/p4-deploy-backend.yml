@@ -1,0 +1,57 @@
+name: p4-deploy-backend
+
+# Called by p4-backend for each environment. Run it by hand to roll
+# back or redeploy: any commit whose image is already in ECR.
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+      version:
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: choice
+        options: [staging, production]
+        required: true
+      version:
+        description: Full commit SHA of an image already in ECR
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    name: Backend to ${{ inputs.environment }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    # One rollout per environment at a time; a newer one waits its turn.
+    concurrency:
+      group: p4-backend-deploy-${{ inputs.environment }}
+      cancel-in-progress: false
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ steps.deploy.outputs.url }}
+    env:
+      ENVIRONMENT: ${{ inputs.environment }}
+      VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Sign in to AWS as the ${{ inputs.environment }} deploy role
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Roll the Auto Scaling group
+        id: deploy
+        run: src/problem4/scripts/deploy-backend.sh "$ENVIRONMENT" "$VERSION"
+      - name: Smoke test through CloudFront
+        run: src/problem4/scripts/smoke.sh backend "$ENVIRONMENT" "$VERSION"

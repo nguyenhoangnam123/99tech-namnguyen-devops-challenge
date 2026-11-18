@@ -1,0 +1,100 @@
+name: p4-backend
+
+# Pull requests: verify and build. main: build once, push the image,
+# then deploy that image to staging and, after approval, production.
+on:
+  pull_request:
+    paths:
+      - src/problem4/apps/backend/**
+      - src/problem4/scripts/**
+      - .github/workflows/p4-backend.yml
+      - .github/workflows/p4-deploy-backend.yml
+  push:
+    branches: [main]
+    paths:
+      - src/problem4/apps/backend/**
+      - src/problem4/scripts/**
+      - .github/workflows/p4-backend.yml
+      - .github/workflows/p4-deploy-backend.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p4-backend-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+defaults:
+  run:
+    working-directory: src/problem4/apps/backend
+
+jobs:
+  verify:
+    name: Lint, types, tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: src/problem4/.nvmrc
+          cache: npm
+          cache-dependency-path: src/problem4/apps/backend/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run format:check
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - name: Dependency audit
+        run: npm audit --audit-level=high
+
+  image:
+    name: Build, scan and publish the image
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build
+        run: docker build --build-arg "APP_VERSION=$GITHUB_SHA" -t "p4-backend:$GITHUB_SHA" .
+      - name: Scan (fixable HIGH and CRITICAL fail the build)
+        run: >-
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.76.2
+          image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed "p4-backend:$GITHUB_SHA"
+      - name: Sign in to AWS as the build role
+        if: github.event_name == 'push'
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_BUILD_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Push to ECR
+        if: github.event_name == 'push'
+        run: ../../scripts/push-image.sh "$GITHUB_SHA"
+
+  staging:
+    needs: image
+    if: github.event_name == 'push'
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/p4-deploy-backend.yml
+    with:
+      environment: staging
+      version: ${{ github.sha }}
+
+  production:
+    needs: staging
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/p4-deploy-backend.yml
+    with:
+      environment: production
+      version: ${{ github.sha }}

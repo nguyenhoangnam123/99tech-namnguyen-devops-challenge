@@ -1,0 +1,49 @@
+name: p4-infra
+
+# Static checks only. Applies run from an operator's machine with
+# reviewed plans; see src/problem4/SOLUTION.md.
+on:
+  pull_request:
+    paths: ['src/problem4/infra/**', '.github/workflows/p4-infra.yml']
+  push:
+    branches: [main]
+    paths: ['src/problem4/infra/**', '.github/workflows/p4-infra.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p4-infra-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: src/problem4/infra
+
+jobs:
+  check:
+    name: fmt, validate, tflint, checkov
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.11.0
+          terraform_wrapper: false
+      - uses: terraform-linters/setup-tflint@6ffdbaa3be476b3431f7275c26966ef32ff60337 # v6.3.2
+      - run: terraform fmt -check -recursive
+      - name: Validate every stack
+        run: |
+          for stack in bootstrap shared env; do
+            terraform -chdir="$stack" init -backend=false -input=false >/dev/null
+            terraform -chdir="$stack" validate
+          done
+      - name: tflint
+        run: tflint --recursive
+      - name: checkov
+        run: >-
+          docker run --rm -v "$PWD:/infra" bridgecrew/checkov:3.4.5
+          --config-file /infra/.checkov.yaml -d /infra
