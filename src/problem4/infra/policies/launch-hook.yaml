@@ -1,0 +1,12 @@
+# A launch that never turns healthy is abandoned instead of joining
+# the load balancer, which fails the instance refresh.
+metadata:
+  id: CKV2_P4_2
+  name: Launch lifecycle hooks abandon instances that never report healthy
+  category: GENERAL_SECURITY
+definition:
+  cond_type: attribute
+  resource_types: [aws_autoscaling_lifecycle_hook]
+  attribute: default_result
+  operator: equals
+  value: ABANDON

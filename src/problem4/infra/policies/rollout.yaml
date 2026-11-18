@@ -1,0 +1,12 @@
+# Instance refresh launches new instances before it terminates old ones,
+# so a release never drops serving capacity.
+metadata:
+  id: CKV2_P4_1
+  name: Auto Scaling groups keep full healthy capacity during instance refresh
+  category: GENERAL_SECURITY
+definition:
+  cond_type: attribute
+  resource_types: [aws_autoscaling_group]
+  attribute: instance_maintenance_policy.min_healthy_percentage
+  operator: greater_than_or_equal
+  value: 100

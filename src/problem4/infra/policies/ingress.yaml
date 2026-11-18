@@ -1,0 +1,16 @@
+# Inbound traffic is allowed from named sources only: a security group
+# or a managed prefix list such as CloudFront's, never an address range.
+metadata:
+  id: CKV2_P4_3
+  name: Security group ingress rules never open a CIDR range
+  category: NETWORKING
+definition:
+  and:
+    - cond_type: attribute
+      resource_types: [aws_vpc_security_group_ingress_rule]
+      attribute: cidr_ipv4
+      operator: not_exists
+    - cond_type: attribute
+      resource_types: [aws_vpc_security_group_ingress_rule]
+      attribute: cidr_ipv6
+      operator: not_exists

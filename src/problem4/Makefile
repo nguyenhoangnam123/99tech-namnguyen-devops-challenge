@@ -22,7 +22,7 @@ lint-infra: ## fmt, validate, tflint and checkov on every stack
 	terraform fmt -check -recursive infra
 	for stack in bootstrap shared env; do $(TF)/$$stack init -backend=false -input=false >/dev/null && $(TF)/$$stack validate; done
 	docker run --rm -v "$$PWD/infra:/data" -w /data ghcr.io/terraform-linters/tflint:v0.59.1 --recursive
-	docker run --rm -v "$$PWD/infra:/infra" bridgecrew/checkov:3.4.5 --config-file /infra/.checkov.yaml -d /infra
+	docker run --rm -v "$$PWD/infra:/infra" bridgecrew/checkov:3.4.5 --config-file /infra/.checkov.yaml -d /infra --external-checks-dir /infra/policies
 
 bootstrap: ## Create the state bucket (once, local state)
 	$(TF)/bootstrap init -input=false

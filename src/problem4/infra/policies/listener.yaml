@@ -1,0 +1,12 @@
+# Requests reach targets only through explicit rules, such as the
+# CloudFront secret header; anything unmatched gets a fixed response.
+metadata:
+  id: CKV2_P4_4
+  name: Load balancer listeners deny by default
+  category: NETWORKING
+definition:
+  cond_type: attribute
+  resource_types: [aws_lb_listener]
+  attribute: default_action.type
+  operator: within
+  value: [fixed-response, redirect]
