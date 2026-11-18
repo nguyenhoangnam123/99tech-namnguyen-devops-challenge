@@ -1,0 +1,117 @@
+# 07 The same disruptions after the fixes
+
+Same script and load as 02 to 05: 50 req/s on /api/users for 60 s, disruption at t=15 s.
+
+$ scripts/chaos.sh none
+response end  statuses                                              p99 ms
+  0-5   s     200:253                                              26
+  5-10  s     200:250                                              8
+ 10-15  s     200:250                                              7
+ 15-20  s     200:250                                              56
+ 20-25  s     200:250                                              8
+ 25-30  s     200:250                                              8
+ 30-35  s     200:250                                              6
+ 35-40  s     200:250                                              7
+ 40-45  s     200:250                                              7
+ 45-50  s     200:250                                              6
+ 50-55  s     200:250                                              6
+ 55-60  s     200:248                                              9
+
+scheduled 3001: 3001 ok (100.0%), 0 errors, 0 no response by the end, 0 never sent; p99 9 ms
+statuses: {"200":3001}
+
+$ scripts/chaos.sh restart-postgres
+response end  statuses                                              p99 ms
+  0-5   s     200:252                                              8
+  5-10  s     200:250                                              8
+ 10-15  s     200:241 500:7                                        27
+ 15-20  s     200:243 500:9                                        25
+ 20-25  s     200:250                                              7
+ 25-30  s     200:250                                              7
+ 30-35  s     200:250                                              9
+ 35-40  s     200:250                                              6
+ 40-45  s     200:250                                              5
+ 45-50  s     200:251                                              6
+ 50-55  s     200:249                                              6
+ 55-60  s     200:249                                              22
+
+scheduled 3001: 2985 ok (99.5%), 16 errors, 0 no response by the end, 0 never sent; p99 9 ms
+statuses: {"200":2985,"500":16}
+
+SERVICE    STATE     STATUS
+api        running   Up (healthy)
+nginx      running   Up
+postgres   running   Up (healthy)
+redis      running   Up (healthy)
+
+$ scripts/chaos.sh cancel-queries
+response end  statuses                                              p99 ms
+  0-5   s     200:251                                              7
+  5-10  s     200:250                                              56
+ 10-15  s     200:250                                              6
+ 15-20  s     500:250                                              17
+ 20-25  s     500:250                                              9
+ 25-30  s     200:250                                              15
+ 30-35  s     200:250                                              9
+ 35-40  s     200:250                                              10
+ 40-45  s     200:250                                              6
+ 45-50  s     200:250                                              6
+ 50-55  s     200:250                                              9
+ 55-60  s     200:250                                              7
+
+scheduled 3001: 2501 ok (83.3%), 500 errors, 0 no response by the end, 0 never sent; p99 10 ms
+statuses: {"200":2501,"500":500}
+
+SERVICE    STATE     STATUS
+api        running   Up (healthy)
+nginx      running   Up
+postgres   running   Up (healthy)
+redis      running   Up (healthy)
+
+$ scripts/chaos.sh stop-redis
+response end  statuses                                              p99 ms
+  0-5   s     200:251                                              7
+  5-10  s     200:250                                              7
+ 10-15  s     200:251                                              7
+ 15-20  s     200:249                                              9
+ 20-25  s     200:251                                              8
+ 25-30  s     200:249                                              6
+ 30-35  s     200:251                                              7
+ 35-40  s     200:250                                              8
+ 40-45  s     200:250                                              71
+ 45-50  s     200:249                                              12
+ 50-55  s     200:250                                              25
+ 55-60  s     200:250                                              7
+
+scheduled 3001: 3001 ok (100.0%), 0 errors, 0 no response by the end, 0 never sent; p99 10 ms
+statuses: {"200":3001}
+
+SERVICE    STATE     STATUS
+api        running   Up (healthy)
+nginx      running   Up
+postgres   running   Up (healthy)
+redis      running   Up (healthy)
+
+$ scripts/chaos.sh recreate-api
+response end  statuses                                              p99 ms
+  0-5   s     200:251                                              9
+  5-10  s     200:250                                              6
+ 10-15  s     200:250                                              6
+ 15-20  s     200:215 502:35                                       1051
+ 20-25  s     200:250                                              12
+ 25-30  s     200:250                                              7
+ 30-35  s     200:250                                              32
+ 35-40  s     200:250                                              6
+ 40-45  s     200:250                                              7
+ 45-50  s     200:250                                              7
+ 50-55  s     200:250                                              11
+ 55-60  s     200:250                                              6
+
+scheduled 3001: 2966 ok (98.8%), 35 errors, 0 no response by the end, 0 never sent; p99 9 ms
+statuses: {"200":2966,"502":35}
+
+SERVICE    STATE     STATUS
+api        running   Up (healthy)
+nginx      running   Up
+postgres   running   Up (healthy)
+redis      running   Up (healthy)
