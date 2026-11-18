@@ -1,0 +1,4 @@
+# Local reusable workflows keep the ./ form that actionlint understands.
+rules:
+  self-repository:
+    disable: true

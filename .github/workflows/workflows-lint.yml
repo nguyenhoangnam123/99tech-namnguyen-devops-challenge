@@ -1,0 +1,27 @@
+name: workflows-lint
+
+# Every workflow in the repository: syntax and expressions (actionlint),
+# then security smells such as template injection (zizmor).
+on:
+  pull_request:
+    paths: ['.github/workflows/**', '.github/zizmor.yml']
+  push:
+    branches: [main]
+    paths: ['.github/workflows/**', '.github/zizmor.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: actionlint and zizmor
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: actionlint
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -color
+      - name: zizmor
+        run: docker run --rm -v "$PWD:/repo" -w /repo ghcr.io/zizmorcore/zizmor:1.32.0 --offline --min-severity low .github/workflows
