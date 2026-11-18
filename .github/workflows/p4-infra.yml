@@ -1,7 +1,7 @@
 name: p4-infra
 
-# Static checks only. Applies run from an operator's machine with
-# reviewed plans; see src/problem4/SOLUTION.md.
+# Static checks, then Terratest plans with a read-only role. Applies run
+# from an operator's machine with reviewed plans; see SOLUTION.md.
 on:
   pull_request:
     paths: ['src/problem4/infra/**', '.github/workflows/p4-infra.yml']
@@ -48,3 +48,38 @@ jobs:
           docker run --rm -v "$PWD:/infra" bridgecrew/checkov:3.4.5
           --config-file /infra/.checkov.yaml -d /infra
           --external-checks-dir /infra/policies
+
+  plan-tests:
+    name: Terratest plans
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.11.0
+          terraform_wrapper: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: src/problem4/infra/test/go.mod
+          cache-dependency-path: src/problem4/infra/test/go.sum
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Plan every stack and check its invariants
+        working-directory: src/problem4/infra/test
+        env:
+          TF_PLUGIN_CACHE_DIR: ${{ runner.temp }}/terraform-plugins
+        run: |
+          mkdir -p "$TF_PLUGIN_CACHE_DIR"
+          go vet ./...
+          go test -count=1 -timeout 15m ./...
