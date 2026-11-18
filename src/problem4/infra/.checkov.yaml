@@ -1,0 +1,41 @@
+# Accepted findings. Each group names why; P5 revisits the cost ones.
+framework: [terraform]
+compact: true
+quiet: true
+skip-check:
+  # No domain in the test account, so no ACM certificate: CloudFront uses
+  # its default certificate and reaches the ALB over HTTP on port 80.
+  - CKV_AWS_2
+  - CKV_AWS_103
+  - CKV_AWS_174
+  - CKV_AWS_378
+  - CKV2_AWS_20
+  - CKV2_AWS_42
+  # Paid add-ons left out of a test account: WAF, access and flow logs,
+  # KMS customer keys, replication, origin failover, event notifications.
+  - CKV_AWS_18
+  - CKV_AWS_68
+  - CKV_AWS_86
+  - CKV_AWS_91
+  - CKV_AWS_136
+  - CKV_AWS_144
+  - CKV_AWS_145
+  - CKV_AWS_158
+  - CKV_AWS_310
+  - CKV2_AWS_11
+  - CKV2_AWS_28
+  - CKV2_AWS_47
+  - CKV2_AWS_62
+  # Public subnets instead of a NAT gateway; inbound is still ALB-only.
+  - CKV_AWS_88
+  # Rules reference CloudFront's prefix list and the ALB's security group,
+  # not 0.0.0.0/0. Instance tags come from the launch template.
+  - CKV_AWS_260
+  - CKV_AWS_153
+  # On unless allow_destroy, which only test teardown sets.
+  - CKV_AWS_150
+  # Plain config, not secrets; SecureString would only add a KMS grant.
+  - CKV2_AWS_34
+  # A global audience; the first two zones are enough for two subnets.
+  - CKV_AWS_374
+  - CKV_AWS_394
