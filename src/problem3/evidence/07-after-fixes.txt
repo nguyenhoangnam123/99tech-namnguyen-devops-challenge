@@ -1,117 +1,184 @@
-# 07 The same disruptions after the fixes
+# 07 The same disruptions after all fixes
 
-Same script and load as 02 to 05: 50 req/s on /api/users for 60 s, disruption at t=15 s.
+Same script and load as 02 to 05 and 08: 50 req/s on /api/users for 60 s,
+one disruption at 15 s.
 
 $ scripts/chaos.sh none
 response end  statuses                                              p99 ms
-  0-5   s     200:253                                              26
-  5-10  s     200:250                                              8
- 10-15  s     200:250                                              7
- 15-20  s     200:250                                              56
- 20-25  s     200:250                                              8
- 25-30  s     200:250                                              8
- 30-35  s     200:250                                              6
- 35-40  s     200:250                                              7
- 40-45  s     200:250                                              7
- 45-50  s     200:250                                              6
- 50-55  s     200:250                                              6
- 55-60  s     200:248                                              9
-
-scheduled 3001: 3001 ok (100.0%), 0 errors, 0 no response by the end, 0 never sent; p99 9 ms
-statuses: {"200":3001}
-
-$ scripts/chaos.sh restart-postgres
-response end  statuses                                              p99 ms
-  0-5   s     200:252                                              8
-  5-10  s     200:250                                              8
- 10-15  s     200:241 500:7                                        27
- 15-20  s     200:243 500:9                                        25
+  0-5   s     200:222                                              23
+  5-10  s     200:250                                              9
+ 10-15  s     200:249                                              9
+ 15-20  s     200:251                                              10  <- disruption
  20-25  s     200:250                                              7
- 25-30  s     200:250                                              7
- 30-35  s     200:250                                              9
- 35-40  s     200:250                                              6
- 40-45  s     200:250                                              5
- 45-50  s     200:251                                              6
- 50-55  s     200:249                                              6
- 55-60  s     200:249                                              22
-
-scheduled 3001: 2985 ok (99.5%), 16 errors, 0 no response by the end, 0 never sent; p99 9 ms
-statuses: {"200":2985,"500":16}
-
-SERVICE    STATE     STATUS
-api        running   Up (healthy)
-nginx      running   Up
-postgres   running   Up (healthy)
-redis      running   Up (healthy)
-
-$ scripts/chaos.sh cancel-queries
-response end  statuses                                              p99 ms
-  0-5   s     200:251                                              7
-  5-10  s     200:250                                              56
- 10-15  s     200:250                                              6
- 15-20  s     500:250                                              17
- 20-25  s     500:250                                              9
- 25-30  s     200:250                                              15
- 30-35  s     200:250                                              9
- 35-40  s     200:250                                              10
- 40-45  s     200:250                                              6
- 45-50  s     200:250                                              6
- 50-55  s     200:250                                              9
- 55-60  s     200:250                                              7
-
-scheduled 3001: 2501 ok (83.3%), 500 errors, 0 no response by the end, 0 never sent; p99 10 ms
-statuses: {"200":2501,"500":500}
-
-SERVICE    STATE     STATUS
-api        running   Up (healthy)
-nginx      running   Up
-postgres   running   Up (healthy)
-redis      running   Up (healthy)
-
-$ scripts/chaos.sh stop-redis
-response end  statuses                                              p99 ms
-  0-5   s     200:251                                              7
-  5-10  s     200:250                                              7
- 10-15  s     200:251                                              7
- 15-20  s     200:249                                              9
- 20-25  s     200:251                                              8
- 25-30  s     200:249                                              6
- 30-35  s     200:251                                              7
- 35-40  s     200:250                                              8
- 40-45  s     200:250                                              71
- 45-50  s     200:249                                              12
- 50-55  s     200:250                                              25
- 55-60  s     200:250                                              7
-
-scheduled 3001: 3001 ok (100.0%), 0 errors, 0 no response by the end, 0 never sent; p99 10 ms
-statuses: {"200":3001}
-
-SERVICE    STATE     STATUS
-api        running   Up (healthy)
-nginx      running   Up
-postgres   running   Up (healthy)
-redis      running   Up (healthy)
-
-$ scripts/chaos.sh recreate-api
-response end  statuses                                              p99 ms
-  0-5   s     200:251                                              9
-  5-10  s     200:250                                              6
- 10-15  s     200:250                                              6
- 15-20  s     200:215 502:35                                       1051
- 20-25  s     200:250                                              12
- 25-30  s     200:250                                              7
- 30-35  s     200:250                                              32
- 35-40  s     200:250                                              6
+ 25-30  s     200:250                                              25
+ 30-35  s     200:249                                              6
+ 35-40  s     200:251                                              7
  40-45  s     200:250                                              7
  45-50  s     200:250                                              7
- 50-55  s     200:250                                              11
+ 50-55  s     200:250                                              6
+ 55-60  s     200:250                                              7
+ 60-65  s     200:28                                               4
+
+scheduled 3000: 3000 ok (100.0%), 0 errors, 0 no response by the end, 0 never sent; p99 8 ms, max 47 ms
+statuses: {"200":3000}
+
+$ scripts/chaos.sh restart-postgres
+disruption: restart-postgres from 15.2 s to 15.9 s
+
+response end  statuses                                              p99 ms
+  0-5   s     200:231                                              9
+  5-10  s     200:250                                              10
+ 10-15  s     200:250                                              16
+ 15-20  s     200:231 500:19                                       31  <- disruption
+ 20-25  s     200:250                                              7
+ 25-30  s     200:250                                              92
+ 30-35  s     200:250                                              7
+ 35-40  s     200:250                                              34
+ 40-45  s     200:250                                              23
+ 45-50  s     200:250                                              8
+ 50-55  s     200:250                                              7
+ 55-60  s     200:250                                              5
+ 60-65  s     200:19                                               5
+
+scheduled 3000: 2981 ok (99.4%), 19 errors, 0 no response by the end, 0 never sent; p99 15 ms, max 1066 ms
+statuses: {"200":2981,"500":19}
+
+$ scripts/chaos.sh cancel-queries
+disruption: cancel-queries from 15.2 s to 25.7 s
+
+response end  statuses                                              p99 ms
+  0-5   s     200:232                                              9
+  5-10  s     200:250                                              7
+ 10-15  s     200:250                                              7
+ 15-20  s     200:25 500:224                                       12  <- disruption
+ 20-25  s     200:1 500:250                                        17  <- disruption
+ 25-30  s     200:224 500:25                                       7  <- disruption
+ 30-35  s     200:251                                              11
+ 35-40  s     200:250                                              8
+ 40-45  s     200:250                                              7
+ 45-50  s     200:250                                              7
+ 50-55  s     200:250                                              7
+ 55-60  s     200:250                                              22
+ 60-65  s     200:19                                               6
+
+scheduled 3001: 2502 ok (83.4%), 499 errors, 0 no response by the end, 0 never sent; p99 11 ms, max 59 ms
+statuses: {"200":2502,"500":499}
+
+$ scripts/chaos.sh stop-redis
+disruption: stop-redis from 15.2 s to 31.2 s
+
+response end  statuses                                              p99 ms
+  0-5   s     200:231                                              9
+  5-10  s     200:251                                              7
+ 10-15  s     200:249                                              6
+ 15-20  s     200:251                                              7  <- disruption
+ 20-25  s     200:250                                              7  <- disruption
+ 25-30  s     200:250                                              37  <- disruption
+ 30-35  s     200:249                                              15  <- disruption
+ 35-40  s     200:250                                              8
+ 40-45  s     200:250                                              8
+ 45-50  s     200:251                                              6
+ 50-55  s     200:250                                              7
  55-60  s     200:250                                              6
+ 60-65  s     200:19                                               14
 
-scheduled 3001: 2966 ok (98.8%), 35 errors, 0 no response by the end, 0 never sent; p99 9 ms
-statuses: {"200":2966,"502":35}
+scheduled 3001: 3001 ok (100.0%), 0 errors, 0 no response by the end, 0 never sent; p99 8 ms, max 99 ms
+statuses: {"200":3001}
 
-SERVICE    STATE     STATUS
-api        running   Up (healthy)
-nginx      running   Up
-postgres   running   Up (healthy)
-redis      running   Up (healthy)
+$ scripts/chaos.sh pause-postgres
+disruption: pause-postgres from 15.2 s to 36.0 s
+
+response end  statuses                                              p99 ms
+  0-5   s     200:232                                              7
+  5-10  s     200:250                                              8
+ 10-15  s     200:250                                              7
+ 15-20  s     200:23 500:126                                       2012  <- disruption
+ 20-25  s     500:251                                              2014  <- disruption
+ 25-30  s     500:250                                              2015  <- disruption
+ 30-35  s     500:250                                              2010  <- disruption
+ 35-40  s     200:308 500:42                                       2008  <- disruption
+ 40-45  s     200:250                                              7
+ 45-50  s     200:250                                              6
+ 50-55  s     200:250                                              10
+ 55-60  s     200:250                                              29
+ 60-65  s     200:18                                               5
+
+scheduled 3000: 2081 ok (69.4%), 919 errors, 0 no response by the end, 0 never sent; p99 2009 ms, max 6007 ms
+statuses: {"200":2081,"500":919}
+
+$ scripts/chaos.sh recreate-api
+disruption: recreate-api from 15.2 s to 16.3 s
+
+response end  statuses                                              p99 ms
+  0-5   s     200:233                                              7
+  5-10  s     200:250                                              7
+ 10-15  s     200:250                                              27
+ 15-20  s     200:223 502:26                                       1063  <- disruption
+ 20-25  s     200:250                                              12
+ 25-30  s     200:251                                              8
+ 30-35  s     200:249                                              7
+ 35-40  s     200:250                                              6
+ 40-45  s     200:250                                              6
+ 45-50  s     200:250                                              6
+ 50-55  s     200:250                                              6
+ 55-60  s     200:250                                              5
+ 60-65  s     200:18                                               4
+
+scheduled 3000: 2974 ok (99.1%), 26 errors, 0 no response by the end, 0 never sent; p99 12 ms, max 1074 ms
+statuses: {"200":2974,"502":26}
+
+## The API process killed from outside, as the OOM killer would
+
+$ docker run --rm --pid=host alpine:3.20 kill -9 $(docker inspect -f '{{.State.Pid}}' problem3-api-1)
+$ docker inspect problem3-api-1   (3 s later)
+running, restarts 1, restart policy "unless-stopped"
+$ curl localhost:8080/api/users
+200
+
+## Stopping the API
+
+$ /usr/bin/time -p docker compose stop api
+ Container problem3-api-1  Stopped
+real 0.39
+$ docker inspect problem3-api-1
+exit code 0
+
+With a request that never finishes (headers half sent from inside the container):
+$ docker compose exec -T api node -e '<open 127.0.0.1:3000, send half the headers, wait>' &
+$ /usr/bin/time -p docker compose stop api
+ Container problem3-api-1  Stopped
+real 8.27
+$ docker inspect problem3-api-1
+exit code 1 (forced exit after 8 s)
+
+For comparison, a kill sent through Docker counts as a manual stop:
+$ docker kill problem3-api-1
+$ docker inspect problem3-api-1   (3 s later)
+exited, restarts 0 (was 0)
+
+## The API comes back at a new address
+
+API address: 172.27.0.4
+$ docker compose stop api
+ Container problem3-api-1  Stopped
+$ docker run -d --rm --name p3-ip-holder --network problem3_default alpine:3.20 sleep 300
+placeholder address: 172.27.0.4
+$ docker compose start api
+ Container problem3-api-1  Started
+API address: 172.27.0.6
+$ docker exec problem3-nginx-1 getent hosts api
+172.27.0.6      api
+$ curl localhost:8080/api/users   (x3)
+200 200 200 
+
+## nginx restarted while the API is down
+
+$ docker compose stop api
+ Container problem3-api-1  Stopped
+$ docker compose restart nginx
+ Container problem3-nginx-1  Started
+$ docker compose ps nginx
+nginx running Up 6 seconds (healthy)
+$ curl localhost:8080/ ; curl localhost:8080/api/users
+/ 200
+/api/users 502 in 0.006130s
