@@ -17,14 +17,23 @@ const pool = new Pool({
 // Postgres drops idle connections on restart; unhandled, that kills the process.
 pool.on("error", (err) => console.error("postgres idle client error:", err.message));
 
-const redis = new Redis({ host: process.env.REDIS_HOST, port: 6379 });
+// last_call is bookkeeping: while Redis is down, drop the write, never queue it.
+const redis = new Redis({
+  host: process.env.REDIS_HOST,
+  port: 6379,
+  enableOfflineQueue: false,
+  commandTimeout: 500,
+});
+redis.on("error", (err) => console.error("redis error:", err.message));
 
 app.get("/api/users", async (req, res) => {
   try {
     // pool.query returns the connection even when the query fails.
     const result = await pool.query("SELECT NOW()");
 
-    await redis.set("last_call", Date.now());
+    redis
+      .set("last_call", Date.now())
+      .catch((err) => console.warn("last_call not recorded:", err.message));
     res.json({ ok: true, time: result.rows[0] });
   } catch (err) {
     console.error(err);

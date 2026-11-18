@@ -1,0 +1,24 @@
+# 03 A Redis outage hangs /api/users, then fails it
+
+Load: 50 req/s on /api/users for 60 s; Redis stopped at t=15 s for 15 s.
+The response does not use Redis; it only records last_call there.
+$ scripts/chaos.sh stop-redis
+response end  statuses                                              p99 ms
+  0-5   s     200:252                                              10
+  5-10  s     200:250                                              7
+ 10-15  s     200:241                                              8
+ 25-30  s     500:535                                              10600
+ 30-35  s     200:474                                              5714
+ 35-40  s     200:250                                              7
+ 40-45  s     200:251                                              7
+ 45-50  s     200:249                                              7
+ 50-55  s     200:250                                              8
+ 55-60  s     200:249                                              7
+
+scheduled 3000: 2466 ok (82.2%), 535 errors, 0 no response by the end, 0 never sent; p99 10104 ms
+statuses: {"200":2466,"500":535}
+
+$ docker compose logs api  (counted)
+ 535 MaxRetriesPerRequestError: Reached the max retries per request limit (which is 20). Refer to "maxRetriesPerRequest" option for details.
+  23 [ioredis] Unhandled error event: Error: getaddrinfo ENOTFOUND redis
+   1 [ioredis] Unhandled error event: Error: connect ECONNREFUSED <redis>:6379
