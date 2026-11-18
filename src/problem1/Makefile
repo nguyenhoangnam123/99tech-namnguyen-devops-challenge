@@ -4,7 +4,7 @@ SHELL := bash
 
 COMPOSE := docker compose --env-file deploy/.env -f deploy/docker-compose.yml
 
-.PHONY: help secrets up up-obs down nuke ps logs build lint typecheck test test-integration e2e chaos security perf slo gen check-gen dashboards ab
+.PHONY: help secrets up up-obs down nuke ps logs build lint typecheck test test-integration e2e chaos security perf slo gen check-gen dashboards ab aws-diagrams
 
 help: ## List targets
 	@grep -E '^[a-z0-9-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-18s %s\n", $$1, $$2}'
@@ -95,3 +95,10 @@ dashboards: ## Regenerate Grafana dashboards from deploy/grafana/dashboards.mjs
 
 ab: ## A/B the same scenario on two commits: make ab A=<sha> B=<sha>
 	scripts/ab.sh $(A) $(B)
+
+DIAGRAMS_IMAGE := p1-aws-diagrams:0.25.1
+
+aws-diagrams: ## Render the AWS diagrams in docs/aws/img (Docker only)
+	docker build -q -t $(DIAGRAMS_IMAGE) docs/aws/diagrams >/dev/null
+	docker run --rm -v "$$PWD/docs/aws:/work" -w /work/diagrams $(DIAGRAMS_IMAGE) \
+	  sh -c 'python assessment.py && python production.py'
