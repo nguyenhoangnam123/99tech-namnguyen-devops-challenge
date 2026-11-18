@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="app-version" content="%VITE_APP_VERSION%" />
+    <title>Ship It Twice</title>
+  </head>
+  <body>
+    <main>
+      <h1>Ship It Twice</h1>
+      <p id="release">Checking the backend…</p>
+      <form id="greet">
+        <label>Name <input name="name" maxlength="64" autocomplete="off" /></label>
+        <button type="submit">Greet</button>
+      </form>
+      <p id="greeting" aria-live="polite"></p>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
