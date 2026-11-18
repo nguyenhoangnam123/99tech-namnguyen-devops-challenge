@@ -6,9 +6,9 @@ const app = express();
 
 const pool = new Pool({
   host: process.env.DB_HOST,
-  user: "postgres",
-  password: "postgres",
-  database: "postgres",
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
   port: 5432,
   // Fail fast when no connection is free, instead of waiting forever.
   connectionTimeoutMillis: 2000,

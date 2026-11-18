@@ -13,8 +13,11 @@ services:
   api:
     build: ./api
     environment:
-      - DB_HOST=postgres
-      - REDIS_HOST=redis
+      DB_HOST: postgres
+      DB_USER: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      DB_NAME: postgres
+      REDIS_HOST: redis
     depends_on:
       postgres:
         condition: service_healthy
@@ -31,7 +34,7 @@ services:
   postgres:
     image: postgres:15
     environment:
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
     healthcheck:
       # Over TCP: during first-run init Postgres answers only on its socket.
       test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "postgres"]
