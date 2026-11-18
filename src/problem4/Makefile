@@ -10,7 +10,7 @@ TF = terraform -chdir=infra
 # Built at the first commit that has the apps, before any deploy ran.
 FIRST_IMAGE_TAG ?=
 
-.PHONY: help test bootstrap shared staging production plan-% github destroy-env-% destroy-shared lint-infra
+.PHONY: help test bootstrap shared staging production plan-% github destroy-env-% destroy-shared lint-infra test-infra test-infra-e2e
 
 help: ## List targets
 	@grep -E '^[a-z% -]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-18s %s\n", $$1, $$2}'
@@ -23,6 +23,12 @@ lint-infra: ## fmt, validate, tflint and checkov on every stack
 	for stack in bootstrap shared env; do $(TF)/$$stack init -backend=false -input=false >/dev/null && $(TF)/$$stack validate; done
 	docker run --rm -v "$$PWD/infra:/data" -w /data ghcr.io/terraform-linters/tflint:v0.59.1 --recursive
 	docker run --rm -v "$$PWD/infra:/infra" bridgecrew/checkov:3.4.5 --config-file /infra/.checkov.yaml -d /infra --external-checks-dir /infra/policies
+
+test-infra: ## Terratest: plan every stack and check its invariants (read-only)
+	cd infra/test && go test -count=1 -timeout 15m ./...
+
+test-infra-e2e: ## Terratest: apply a throwaway environment, test it, destroy it
+	cd infra/test && P4_E2E_IMAGE_TAG=$(IMAGE_TAG) go test -count=1 -timeout 60m -run TestEnvironmentEndToEnd -v ./...
 
 bootstrap: ## Create the state bucket (once, local state)
 	$(TF)/bootstrap init -input=false

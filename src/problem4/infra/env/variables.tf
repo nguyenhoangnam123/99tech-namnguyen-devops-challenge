@@ -1,8 +1,8 @@
 variable "environment" {
   type = string
   validation {
-    condition     = contains(["staging", "production"], var.environment)
-    error_message = "environment must be staging or production."
+    condition     = can(regex("^(staging|production|e2e-[a-z0-9]{4,8})$", var.environment))
+    error_message = "environment must be staging, production, or e2e-<id> for tests."
   }
 }
 
