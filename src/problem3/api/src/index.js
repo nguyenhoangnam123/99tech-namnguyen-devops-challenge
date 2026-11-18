@@ -28,14 +28,24 @@ const redis = new Redis({
 });
 redis.on("error", (err) => console.error("redis error:", err.message));
 
+// One summary line per 10 s while writes fail, not one line per request.
+let lastCallFailures = 0;
+let lastCallError = "";
+setInterval(() => {
+  if (lastCallFailures === 0) return;
+  console.warn(`last_call not recorded ${lastCallFailures} times in 10 s: ${lastCallError}`);
+  lastCallFailures = 0;
+}, 10_000).unref();
+
 app.get("/api/users", async (req, res) => {
   try {
     // pool.query returns the connection even when the query fails.
     const result = await pool.query("SELECT NOW()");
 
-    redis
-      .set("last_call", Date.now())
-      .catch((err) => console.warn("last_call not recorded:", err.message));
+    redis.set("last_call", Date.now()).catch((err) => {
+      lastCallFailures += 1;
+      lastCallError = err.message;
+    });
     res.json({ ok: true, time: result.rows[0] });
   } catch (err) {
     console.error(err);
