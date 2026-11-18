@@ -2,6 +2,8 @@
 # Shared helpers. Deploy settings come from SSM parameters that
 # Terraform writes, so workflows only need a role ARN and a region.
 set -euo pipefail
+# A profile may default to table or text; these scripts parse JSON.
+export AWS_DEFAULT_OUTPUT=json AWS_PAGER=
 
 log() { printf '%s %s\n' "$(date -u +%H:%M:%SZ)" "$*" >&2; }
 fail() { log "error: $*"; exit 1; }
