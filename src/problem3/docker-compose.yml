@@ -6,7 +6,8 @@ services:
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     restart: unless-stopped
 
   api:
@@ -15,16 +16,35 @@ services:
       - DB_HOST=postgres
       - REDIS_HOST=redis
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/status"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 10s
     restart: unless-stopped
 
   postgres:
     image: postgres:15
     environment:
       POSTGRES_PASSWORD: postgres
+    healthcheck:
+      # Over TCP: during first-run init Postgres answers only on its socket.
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     restart: unless-stopped
 
   redis:
     image: redis:7
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     restart: unless-stopped
