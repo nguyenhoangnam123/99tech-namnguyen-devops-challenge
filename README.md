@@ -1,12 +1,12 @@
 # 99Tech DevOps Challenge
 
-| Problem                           | Status                                                                                                                                               | Where                                    |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| 1. Building Castle In The Cloud   | Wave 1 done: a working exchange with unit, contract, integration, e2e, chaos, abuse and load tests on a local stack. The AWS design comes in wave 2. | [src/problem1](src/problem1/README.md)   |
-| 2. Diagnose Me Doctor             | Not started                                                                                                                                          | [src/problem2](src/problem2/SOLUTION.md) |
-| 3. Debugging issues within system | Not started                                                                                                                                          | [src/problem3](src/problem3/README.md)   |
-| 4. Ship It Twice                  | Not started                                                                                                                                          | [src/problem4](src/problem4/SOLUTION.md) |
-| 5. Fortify The Castle             | Not started                                                                                                                                          | [src/problem5](src/problem5/SOLUTION.md) |
+| Problem                           | Status                                                                                                                                                                                                                   | Where                                    |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- |
+| 1. Building Castle In The Cloud   | Wave 1: a working exchange with unit, contract, integration, e2e, chaos, abuse and load tests on a local stack. Wave 2: the AWS design, with diagrams, sizing from measurements, latency budget, failure modes and cost. | [src/problem1](src/problem1/SOLUTION.md) |
+| 2. Diagnose Me Doctor             | Not started                                                                                                                                                                                                              | [src/problem2](src/problem2/SOLUTION.md) |
+| 3. Debugging issues within system | Done: eight root causes fixed, each with before and after evidence under load.                                                                                                                                           | [src/problem3](src/problem3/SOLUTION.md) |
+| 4. Ship It Twice                  | Done: backend and frontend pipelines with GitHub OIDC, applied and tested on AWS.                                                                                                                                        | [src/problem4](src/problem4/SOLUTION.md) |
+| 5. Fortify The Castle             | Not started                                                                                                                                                                                                              | [src/problem5](src/problem5/SOLUTION.md) |
 
 ## Assumptions about the brief
 
