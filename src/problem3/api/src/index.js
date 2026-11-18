@@ -13,6 +13,8 @@ const pool = new Pool({
   // Fail fast when no connection is free, instead of waiting forever.
   connectionTimeoutMillis: 2000,
   statement_timeout: 5000,
+  // Client-side cap for when Postgres cannot answer, so cannot time out itself.
+  query_timeout: 6000,
 });
 // Postgres drops idle connections on restart; unhandled, that kills the process.
 pool.on("error", (err) => console.error("postgres idle client error:", err.message));

@@ -1,0 +1,31 @@
+# 08 A frozen Postgres holds requests for as long as it is frozen
+
+Load: 50 req/s on /api/users for 60 s; `docker compose pause postgres` for 20 s.
+Code as of the fixes for 01 to 07. statement_timeout is enforced by Postgres itself,
+so a frozen server never applies it: the 10 requests holding connections wait it out.
+The rest fail after the 2 s pool wait. A freeze over 60 s would end in nginx 504s.
+
+$ scripts/chaos.sh pause-postgres
+disruption: pause-postgres from 15.2 s to 35.9 s
+
+response end  statuses                                              p99 ms
+  0-5   s     200:227                                              23
+  5-10  s     200:250                                              11
+ 10-15  s     200:250                                              7
+ 15-20  s     200:20 500:129                                       2014  <- disruption
+ 20-25  s     500:250                                              2009  <- disruption
+ 25-30  s     500:250                                              2010  <- disruption
+ 30-35  s     500:250                                              2009  <- disruption
+ 35-40  s     200:314 500:37                                       2007  <- disruption
+ 40-45  s     200:250                                              8
+ 45-50  s     200:250                                              30
+ 50-55  s     200:250                                              5
+ 55-60  s     200:250                                              5
+ 60-65  s     200:24                                               11
+
+scheduled 3001: 2085 ok (69.5%), 916 errors, 0 no response by the end, 0 never sent; p99 2008 ms, max 20330 ms
+statuses: {"200":2085,"500":916}
+
+$ docker compose logs api  (counted)
+ 907 Error: timeout exceeded when trying to connect
+   9 Error: Connection terminated due to connection timeout
