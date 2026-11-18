@@ -9,6 +9,7 @@ role_arn() { aws iam get-role --role-name "$1" --query Role.Arn --output text; }
 
 gh variable set AWS_REGION --repo "$repo" --body "$region"
 gh variable set AWS_BUILD_ROLE_ARN --repo "$repo" --body "$(role_arn p4-github-build)"
+gh variable set AWS_PLAN_ROLE_ARN --repo "$repo" --body "$(role_arn p4-github-plan)"
 
 for environment in staging production; do
   reviewers='[]'
