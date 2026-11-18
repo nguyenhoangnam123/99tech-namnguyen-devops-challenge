@@ -1,0 +1,24 @@
+# 05 nginx keeps the API address it resolved at startup
+
+The API container is restarted while another container takes its old address
+(here a placeholder; in practice any container joining the network).
+
+$ docker compose stop api && docker run -d --network problem3_default alpine sleep 120
+placeholder now holds 172.27.0.4, the API's old address
+$ docker compose start api
+$ docker exec problem3-nginx-1 getent hosts api
+172.27.0.6      api
+$ curl localhost:8080/api/users  (x3)
+502 502 502 
+$ docker compose logs nginx
+connect() failed (111: Connection refused) while connecting to upstream, request: "GET /api/users HTTP/1.1", upstream: "http://172.27.0.4:3000/api/users"
+
+The same happens on an ordinary redeploy, with no placeholder:
+
+$ docker compose up -d --build api      (API moves from 172.27.0.6 to .5)
+$ scripts/chaos.sh restart-postgres     (60 s at 50 req/s)
+scheduled 3000: 0 ok (0.0%), 2044 errors, 474 no response by the end, 482 never sent
+$ docker compose logs nginx | grep -o 'upstream: "http://[0-9.]*:3000' | uniq -c
+   2045 upstream: "http://172.27.0.6:3000
+
+After the fix, same steps: nginx follows the API to its new address; 200 200 200.
