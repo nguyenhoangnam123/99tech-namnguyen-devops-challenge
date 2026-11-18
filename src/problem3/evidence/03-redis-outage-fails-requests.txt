@@ -1,24 +1,55 @@
-# 03 A Redis outage hangs /api/users, then fails it
+# 03 A Redis outage stalls /api/users, and can fail it
 
-Load: 50 req/s on /api/users for 60 s; Redis stopped at t=15 s for 15 s.
-The response does not use Redis; it only records last_call there.
-$ scripts/chaos.sh stop-redis
+Code at da461c3 (port fixed, nothing else); scripts from this branch.
+Load: 50 req/s on /api/users for 60 s; Redis stopped at 15 s for 15 s.
+The response does not use Redis; it only records last_call there. ioredis queues
+the write and retries it up to 20 times, so the outcome depends on retry timing:
+two identical runs below, one stalled every request, one failed 533 of them.
+
+$ scripts/chaos.sh stop-redis    (run 1)
+disruption: stop-redis from 15.2 s to 31.2 s
+
 response end  statuses                                              p99 ms
-  0-5   s     200:252                                              10
+  0-5   s     200:226                                              9
+  5-10  s     200:250                                              8
+ 10-15  s     200:250                                              7
+ 15-20  s     200:24                                               5  <- disruption
+ 30-35  s     200:976                                              15979  <- disruption
+ 35-40  s     200:250                                              6
+ 40-45  s     200:250                                              8
+ 45-50  s     200:250                                              7
+ 50-55  s     200:250                                              6
+ 55-60  s     200:250                                              7
+ 60-65  s     200:25                                               6
+
+scheduled 3001: 3001 ok (100.0%), 0 errors, 0 no response by the end, 0 never sent; p99 15562 ms, max 16157 ms
+statuses: {"200":3001}
+
+$ docker compose logs api  (run 1, counted)
+  13 [ioredis] Unhandled error event: Error: getaddrinfo ENOTFOUND redis
+   1 [ioredis] Unhandled error event: Error: connect ETIMEDOUT
+
+$ scripts/chaos.sh stop-redis    (run 2)
+disruption: stop-redis from 15.2 s to 31.3 s
+
+response end  statuses                                              p99 ms
+  0-5   s     200:227                                              10
   5-10  s     200:250                                              7
- 10-15  s     200:241                                              8
- 25-30  s     500:535                                              10600
- 30-35  s     200:474                                              5714
- 35-40  s     200:250                                              7
- 40-45  s     200:251                                              7
- 45-50  s     200:249                                              7
- 50-55  s     200:250                                              8
- 55-60  s     200:249                                              7
+ 10-15  s     200:250                                              7
+ 15-20  s     200:25                                               3  <- disruption
+ 25-30  s     500:533                                              10551  <- disruption
+ 30-35  s     200:441                                              5685  <- disruption
+ 35-40  s     200:251                                              5
+ 40-45  s     200:250                                              5
+ 45-50  s     200:249                                              5
+ 50-55  s     200:251                                              9
+ 55-60  s     200:249                                              6
+ 60-65  s     200:25                                               6
 
-scheduled 3000: 2466 ok (82.2%), 535 errors, 0 no response by the end, 0 never sent; p99 10104 ms
-statuses: {"200":2466,"500":535}
+scheduled 3001: 2468 ok (82.2%), 533 errors, 0 no response by the end, 0 never sent; p99 10055 ms, max 10731 ms
+statuses: {"200":2468,"500":533}
 
-$ docker compose logs api  (counted)
- 535 MaxRetriesPerRequestError: Reached the max retries per request limit (which is 20). Refer to "maxRetriesPerRequest" option for details.
+$ docker compose logs api  (run 2, counted)
+ 533 MaxRetriesPerRequestError: Reached the max retries per request limit (which is 20). Refer to "maxRetriesPerRequest" option for details.
   23 [ioredis] Unhandled error event: Error: getaddrinfo ENOTFOUND redis
-   1 [ioredis] Unhandled error event: Error: connect ECONNREFUSED <redis>:6379
+   1 [ioredis] Unhandled error event: Error: read ECONNRESET

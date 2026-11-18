@@ -1,20 +1,25 @@
 # 04 Ten failed queries leak the whole pool; the API then hangs for good
 
-Load: 50 req/s on /api/users for 60 s. From t=15 s, in-flight queries are cancelled
+Code at da461c3 (port fixed, nothing else); scripts from this branch.
+Load: 50 req/s on /api/users for 60 s. From 15 s, in-flight queries are cancelled
 for 10 s (pg_cancel_backend): the query fails, its connection stays healthy.
 db.release() is skipped when the query throws, and pool.connect() waits forever.
-$ scripts/chaos.sh cancel-queries
-response end  statuses                                              p99 ms
-  0-5   s     200:252                                              7
-  5-10  s     200:250                                              8
- 10-15  s     200:243 500:7                                        8
- 15-20  s     500:3                                                8
- 75-80  s     504:246                                              60024
- 80-85  s     504:251                                              60011
- 85-90  s     504:249                                              60011
 
-scheduled 3000: 745 ok (24.8%), 756 errors, 1126 no response by the end, 373 never sent; p99 60011 ms
-statuses: {"200":745,"500":10,"504":746}
+$ scripts/chaos.sh cancel-queries
+disruption: cancel-queries from 15.2 s to 25.7 s
+
+response end  statuses                                              p99 ms
+  0-5   s     200:228                                              11
+  5-10  s     200:250                                              7
+ 10-15  s     200:250                                              9
+ 15-20  s     200:30 500:10                                        29  <- disruption
+ 75-80  s     504:210                                              60024
+ 80-85  s     504:250                                              60019
+ 85-90  s     504:250                                              60014
+ 90-95  s     504:22                                               60012
+
+scheduled 3000: 758 ok (25.3%), 742 errors, 1133 no response by the end, 367 never sent; p99 60013 ms, max 60038 ms
+statuses: {"200":758,"500":10,"504":732}
 
 $ docker compose logs api | grep -c "canceling statement"
 10
@@ -22,5 +27,5 @@ $ docker compose logs api | grep -c "canceling statement"
 $ psql: connections from the API by state, after the run
 idle|10
 
-$ curl -m 5 localhost:8080/api/users   (a minute after the run)
-000 after 5.006156s (timed out)
+$ curl -m 5 localhost:8080/api/users   (after the run)
+000 after 5.004463s (timed out)
