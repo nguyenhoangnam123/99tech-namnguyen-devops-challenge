@@ -1,6 +1,7 @@
 package test
 
 import (
+	"errors"
 	"net"
 	"net/http"
 	"os"
@@ -56,10 +57,15 @@ func TestEnvironmentEndToEnd(t *testing.T) {
 
 	t.Run("the load balancer refuses direct connections", func(t *testing.T) {
 		alb := terraform.Output(t, options, "alb_dns_name")
+		_, err := net.LookupHost(alb)
+		require.NoError(t, err, "the ALB name resolves")
 		connection, err := net.DialTimeout("tcp", alb+":80", 5*time.Second)
 		if err == nil {
 			connection.Close()
 		}
-		assert.Error(t, err, "only CloudFront's address ranges may connect")
+		// The security group drops packets, so a refusal would point elsewhere.
+		var netErr net.Error
+		require.Error(t, err, "only CloudFront's address ranges may connect")
+		assert.Truef(t, errors.As(err, &netErr) && netErr.Timeout(), "want a timeout, got %v", err)
 	})
 }

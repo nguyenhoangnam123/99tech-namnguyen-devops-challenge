@@ -72,11 +72,24 @@ func checkRollout(t *testing.T, plan *terraform.PlanStruct, environment string) 
 
 // Users reach the API only through CloudFront, over HTTPS.
 func checkEdge(t *testing.T, plan *terraform.PlanStruct) {
-	for _, rule := range resourcesOfType(plan, "aws_vpc_security_group_ingress_rule") {
-		assert.Empty(t, rule["cidr_ipv4"], "ingress from a CIDR range")
-		assert.Empty(t, rule["cidr_ipv6"], "ingress from a CIDR range")
+	for address, resource := range plan.ResourcePlannedValuesMap {
+		values := resource.AttributeValues
+		switch resource.Type {
+		case "aws_vpc_security_group_ingress_rule":
+			for _, cidr := range []string{"cidr_ipv4", "cidr_ipv6"} {
+				assert.Emptyf(t, values[cidr], "%s: ingress from a CIDR range", address)
+				assert.Falsef(t, unknownAfterApply(plan, address, cidr), "%s: %s set at apply", address, cidr)
+			}
+		case "aws_security_group":
+			assert.Emptyf(t, values["ingress"], "%s: inline ingress", address)
+		case "aws_security_group_rule":
+			assert.Equalf(t, "egress", values["type"], "%s: use aws_vpc_security_group_ingress_rule", address)
+		case "aws_lb_listener_rule":
+			assert.Truef(t, verifiesOrigin(values), "%s forwards without the CloudFront header", address)
+		}
 	}
 	assert.NotEmpty(t, attrs(t, plan, "aws_vpc_security_group_ingress_rule.alb_from_cloudfront")["prefix_list_id"])
+	attrs(t, plan, "aws_lb_listener_rule.from_cloudfront")
 
 	assert.Equal(t, true, attrs(t, plan, "aws_lb.backend")["enable_deletion_protection"])
 	deny := block(t, attrs(t, plan, "aws_lb_listener.http"), "default_action")

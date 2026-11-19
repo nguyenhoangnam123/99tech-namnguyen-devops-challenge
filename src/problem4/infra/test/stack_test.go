@@ -48,14 +48,29 @@ func block(t *testing.T, values map[string]any, name string) map[string]any {
 	return list[0].(map[string]any)
 }
 
-func resourcesOfType(plan *terraform.PlanStruct, kind string) []map[string]any {
-	var found []map[string]any
-	for _, resource := range plan.ResourcePlannedValuesMap {
-		if resource.Type == kind {
-			found = append(found, resource.AttributeValues)
+// unknownAfterApply reports values the plan cannot show, which assertions
+// on planned values would otherwise pass without checking.
+func unknownAfterApply(plan *terraform.PlanStruct, address, attribute string) bool {
+	change, ok := plan.ResourceChangesMap[address]
+	if !ok {
+		return false
+	}
+	unknown, _ := change.Change.AfterUnknown.(map[string]any)
+	return unknown[attribute] == true
+}
+
+// verifiesOrigin reports whether a listener rule requires CloudFront's secret header.
+func verifiesOrigin(rule map[string]any) bool {
+	conditions, _ := rule["condition"].([]any)
+	for _, condition := range conditions {
+		headers, _ := condition.(map[string]any)["http_header"].([]any)
+		for _, header := range headers {
+			if header.(map[string]any)["http_header_name"] == "X-Origin-Verify" {
+				return true
+			}
 		}
 	}
-	return found
+	return false
 }
 
 type trustPolicy struct {
