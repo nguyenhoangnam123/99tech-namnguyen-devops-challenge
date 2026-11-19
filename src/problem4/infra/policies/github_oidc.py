@@ -5,6 +5,12 @@ from checkov.terraform.checks.data.base_check import BaseDataCheck
 ISSUER = "token.actions.githubusercontent.com"
 
 
+def _values(block, key):
+    value = block.get(key, [])
+    flat = value[0] if len(value) == 1 and isinstance(value[0], list) else value
+    return [str(v) for v in flat]
+
+
 class GithubOidcExactSubject(BaseDataCheck):
     def __init__(self):
         super().__init__(
@@ -16,14 +22,13 @@ class GithubOidcExactSubject(BaseDataCheck):
 
     def scan_data_conf(self, conf):
         for statement in conf.get("statement", []):
-            conditions = statement.get("condition", [])
-            variables = [str(c.get("variable", [""])[0]) for c in conditions]
-            if not any(v.startswith(ISSUER) for v in variables):
+            if "sts:AssumeRoleWithWebIdentity" not in _values(statement, "actions"):
                 continue
-            # A wildcard subject would let any branch or fork assume the role.
-            exact = [c for c in conditions if c.get("variable") == [f"{ISSUER}:sub"]
-                     and c.get("test") == ["StringEquals"]]
-            if not exact:
+            conditions = statement.get("condition", [])
+            pinned = {_values(c, "variable")[0] for c in conditions
+                      if _values(c, "test") == ["StringEquals"] and _values(c, "variable")}
+            # Without both, any repository or any branch could assume the role.
+            if not {f"{ISSUER}:aud", f"{ISSUER}:sub"} <= pinned:
                 return CheckResult.FAILED
         return CheckResult.PASSED
 

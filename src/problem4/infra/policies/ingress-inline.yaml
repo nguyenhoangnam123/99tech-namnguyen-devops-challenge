@@ -1,0 +1,10 @@
+# Inline ingress blocks bypass CKV2_P4_3; rules live in their own resources.
+metadata:
+  id: CKV2_P4_6
+  name: Security groups declare no inline ingress
+  category: NETWORKING
+definition:
+  cond_type: attribute
+  resource_types: [aws_security_group]
+  attribute: ingress
+  operator: not_exists

@@ -1,0 +1,21 @@
+# The older rule resource gets the same treatment as CKV2_P4_3.
+metadata:
+  id: CKV2_P4_7
+  name: Security group rules never open a CIDR range inbound
+  category: NETWORKING
+definition:
+  or:
+    - cond_type: attribute
+      resource_types: [aws_security_group_rule]
+      attribute: type
+      operator: equals
+      value: egress
+    - and:
+        - cond_type: attribute
+          resource_types: [aws_security_group_rule]
+          attribute: cidr_blocks
+          operator: not_exists
+        - cond_type: attribute
+          resource_types: [aws_security_group_rule]
+          attribute: ipv6_cidr_blocks
+          operator: not_exists
