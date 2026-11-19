@@ -28,6 +28,7 @@ test-infra: ## Terratest: plan every stack and check its invariants (read-only)
 	cd infra/test && go test -count=1 -timeout 15m ./...
 
 test-infra-e2e: ## Terratest: apply a throwaway environment, test it, destroy it
+	$(if $(IMAGE_TAG),,$(error IMAGE_TAG must name a commit with an image in ECR))
 	cd infra/test && P4_E2E_IMAGE_TAG=$(IMAGE_TAG) go test -count=1 -timeout 60m -run TestEnvironmentEndToEnd -v ./...
 
 bootstrap: ## Create the state bucket (once, local state)

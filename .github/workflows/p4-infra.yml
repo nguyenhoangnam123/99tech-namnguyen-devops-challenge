@@ -52,6 +52,10 @@ jobs:
   plan-tests:
     name: Terratest plans
     needs: check
+    # Skipped until the plan role exists, and for forks, which get no OIDC token.
+    if: >-
+      vars.AWS_PLAN_ROLE_ARN != '' && (github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
