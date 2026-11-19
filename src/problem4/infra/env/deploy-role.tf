@@ -104,10 +104,12 @@ data "aws_iam_policy_document" "deploy" {
       values   = ["ec2.amazonaws.com"]
     }
   }
+  # Auto Scaling checks rollback alarms with DescribeAlarms on alarm:*,
+  # not on the two alarms the refresh names.
   statement {
     sid       = "RollbackAlarms"
     actions   = ["cloudwatch:DescribeAlarms"]
-    resources = [aws_cloudwatch_metric_alarm.backend_5xx.arn, aws_cloudwatch_metric_alarm.backend_unhealthy.arn]
+    resources = ["arn:aws:cloudwatch:${var.region}:${data.aws_caller_identity.current.account_id}:alarm:*"]
   }
   statement {
     sid       = "ReadFrontendBuilds"
