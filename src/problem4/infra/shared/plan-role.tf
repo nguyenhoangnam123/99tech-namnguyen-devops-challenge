@@ -16,8 +16,8 @@ data "aws_iam_policy_document" "plan_trust" {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
       values = [
-        "repo:${var.github_repository}:pull_request",
-        "repo:${var.github_repository}:ref:refs/heads/main",
+        "${var.github_subject}:pull_request",
+        "${var.github_subject}:ref:refs/heads/main",
       ]
     }
   }

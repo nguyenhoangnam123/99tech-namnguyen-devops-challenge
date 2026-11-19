@@ -15,7 +15,7 @@ data "aws_iam_policy_document" "build_trust" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repository}:ref:refs/heads/main"]
+      values   = ["${var.github_subject}:ref:refs/heads/main"]
     }
   }
 }

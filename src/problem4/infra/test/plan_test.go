@@ -113,7 +113,7 @@ func checkEdge(t *testing.T, plan *terraform.PlanStruct) {
 func checkDeployRole(t *testing.T, plan *terraform.PlanStruct, environment string) {
 	role := attrs(t, plan, "aws_iam_role.deploy")
 	assert.Equal(t, "p4-github-deploy-"+environment, role["name"])
-	assert.Equal(t, []any{"repo:" + repository + ":environment:" + environment},
+	assert.Equal(t, []any{subject + ":environment:" + environment},
 		subjects(t, role["assume_role_policy"].(string)))
 }
 

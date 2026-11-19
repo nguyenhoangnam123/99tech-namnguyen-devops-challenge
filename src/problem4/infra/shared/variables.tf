@@ -3,10 +3,10 @@ variable "region" {
   default = "ap-southeast-1"
 }
 
-variable "github_repository" {
-  description = "owner/name of the repository whose workflows may assume the roles."
+variable "github_subject" {
+  description = "OIDC subject prefix in GitHub's immutable owner@id/name@id form; see actions/oidc/customization/sub."
   type        = string
-  default     = "nguyenhoangnam123/99tech-namnguyen-devops-challenge"
+  default     = "repo:nguyenhoangnam123@26792601/99tech-namnguyen-devops-challenge@1461258321"
 }
 
 variable "allow_destroy" {

@@ -11,7 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const repository = "nguyenhoangnam123/99tech-namnguyen-devops-challenge"
+// GitHub's immutable subject: owner and repository IDs survive renames.
+const subject = "repo:nguyenhoangnam123@26792601/99tech-namnguyen-devops-challenge@1461258321"
 
 func region() string {
 	if r := os.Getenv("AWS_REGION"); r != "" {
