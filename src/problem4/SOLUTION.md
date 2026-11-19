@@ -13,6 +13,7 @@ and rollbacks in [Evidence](#evidence) were measured there.
 | Workflows | [`.github/workflows/p4-*.yml`](../../.github/workflows), at the repository root because GitHub only runs them there |
 | Deploy logic | [scripts/](scripts), plain Bash that the workflows call and an operator can run |
 | Infrastructure | [infra/](infra): `bootstrap` (state bucket), `shared` (OIDC, ECR, artifacts), `env` (one per environment) |
+| Infrastructure tests | [infra/test](infra/test) (Terratest), [infra/policies](infra/policies) (custom Checkov policies) |
 
 ## What "production ready" means here
 
@@ -25,7 +26,7 @@ and rollbacks in [Evidence](#evidence) were measured there.
 | Bad releases never reach users | New instances join the load balancer only after the API answers on them. A release that never does is rolled back; so is one that raises 5xx or unhealthy-host alarms. |
 | Any release can be restored | Run the deploy workflow by hand with an older commit. |
 | Each deploy is verified | A smoke test asks CloudFront, as a user would, which version is live, and fails unless it is this commit. |
-| Checks before anything ships | Format, types, lint, unit tests and dependency audit on every pull request; image scan with Trivy; Terraform fmt, validate, tflint and checkov; actionlint and zizmor on every workflow. |
+| Checks before anything ships | Format, types, lint, unit tests and dependency audit on every pull request; image scan with Trivy; Terraform fmt, validate, tflint, Checkov with custom policies, and Terratest plans; actionlint and zizmor on every workflow. |
 | A hardened pipeline | Actions pinned to commit SHAs, read-only `GITHUB_TOKEN` by default, no persisted checkout credentials, inputs passed through `env`, one rollout per environment at a time. |
 
 ## Architecture
@@ -106,14 +107,83 @@ Any failure leaves the previous version serving, and the job fails.
 | `p4-github-build` | `repo:<repo>:ref:refs/heads/main` | Push to the one ECR repository; write `frontend/*` in the artifact bucket |
 | `p4-github-deploy-staging` | `repo:<repo>:environment:staging` | Roll the staging group; publish to the staging bucket; invalidate staging CloudFront |
 | `p4-github-deploy-production` | `repo:<repo>:environment:production` | The same, for production only |
+| `p4-github-plan` | `repo:<repo>:pull_request` and `main` | Read-only lookups for Terraform data sources; no state, no secrets |
 
-Pull requests get no AWS access at all. A workflow on another branch cannot reach production
-even if it names the production environment, because the environment only accepts `main`.
+`<repo>` is GitHub's immutable form, `<owner>@<owner-id>/<name>@<repo-id>`, which new
+repositories send by default: a renamed or re-created repository cannot inherit the trust.
+
+Pull requests get only the read-only plan role. A workflow on another branch cannot reach
+production even if it names the production environment, because the environment accepts
+`main` only (a rule that needs the GitHub plan noted under [Assumptions](#assumptions)).
+
+## Infrastructure tests
+
+The rules the rollout depends on are tested twice: statically on the code, then on the plan
+Terraform would apply.
+
+**Custom Checkov policies** ([infra/policies](infra/policies)) run with the built-in checks on
+every change under `infra/`:
+
+| Policy | Rule |
+|---|---|
+| `CKV2_P4_1` | Auto Scaling groups keep 100% healthy capacity during instance refresh |
+| `CKV2_P4_2` | Launch lifecycle hooks abandon instances that never report healthy |
+| `CKV2_P4_3`, `CKV2_P4_6`, `CKV2_P4_7` | Ingress comes from a security group or prefix list, never a CIDR range, whichever resource declares it |
+| `CKV2_P4_4` | Load balancer listeners deny by default |
+| `CKV_P4_5` | GitHub OIDC trust pins both audience and subject with exact matches |
+
+**Terratest plan tests** ([plan_test.go](infra/test/plan_test.go)) copy each stack to a temporary
+folder with local state, plan staging, production and the shared stack, and assert on the
+plan JSON:
+
+- Rollout: maintenance policy 100/200, ELB health checks, room to double capacity, two
+  instances in production, the launch hook defaults to `ABANDON`, IMDSv2 with instance tags.
+- Edge: no CIDR ingress (including values only known at apply), ALB only from CloudFront's
+  prefix list, listener denies by default, every listener rule requires the CloudFront
+  header, HTTPS on every behaviour, `/api/*` routed to the ALB, site bucket fully private.
+- Identity: each deploy role trusts only its own GitHub environment.
+- Shared: immutable ECR tags with scanning, versioned artifacts, the GitHub OIDC provider.
+- An unknown environment name is rejected.
+
+CI runs them on pull requests and `main` with the read-only `p4-github-plan` role. They never
+read the state bucket, which holds the CloudFront origin secret.
+
+**Terratest end-to-end test** ([e2e_test.go](infra/test/e2e_test.go)) applies a throwaway
+`e2e-<id>` environment with a real image, checks it as a user would, then destroys it:
+
+- the API answers through CloudFront with the requested version;
+- plain HTTP is redirected to HTTPS;
+- a direct connection to the ALB times out (its security group drops it).
+
+It needs admin credentials, so an operator runs it (`make test-infra-e2e`).
 
 ## Evidence
 
-Measured on the staging environment in `ap-southeast-1`. A probe requested `/api/version`
-through CloudFront every 0.5 s during each rollout.
+Measured in `ap-southeast-1`. During each backend rollout a probe requested `/api/version`
+through CloudFront every 0.5 s.
+
+**The pipelines on GitHub Actions**, one push to `main`, every AWS call through OIDC:
+
+| Stage | Result |
+|---|---|
+| Image built, scanned and published (build role) | 1 min 10 s |
+| Backend to staging | Live and verified in 5 min 5 s. 843 probe requests, all 200 |
+| Backend to production | Live and verified in 4 min 49 s. 924 probe requests, all 200 |
+| Frontend to staging, then production | 42 s each, verified by the smoke test |
+| Terratest plans (read-only plan role) | All stacks planned and checked in 7 min, mostly the AWS provider download |
+
+Production deployed without the approval click: see [Assumptions](#assumptions) for the GitHub
+plan that gate needs.
+
+**Infrastructure tests**, run from an operator's machine:
+
+| Test | Result |
+|---|---|
+| Terratest end-to-end | 41 resources applied, 3 checks passed, 41 destroyed, in 9 min 40 s |
+| Custom Checkov policies | 236 checks pass on the stacks; each custom policy fails a deliberately bad example |
+| Plan tests against a regression | Setting `min_healthy_percentage` to 90 fails the plan test |
+
+**Rollout behaviour**, from the deploy scripts against staging:
 
 | Test | Result |
 |---|---|
@@ -134,6 +204,9 @@ through CloudFront every 0.5 s during each rollout.
 - **Two environments**, `staging` and `production`, in `ap-southeast-1`.
 - **No domain of our own**, so CloudFront's default certificate serves HTTPS to users.
 - **One maintainer**, so the production reviewer may approve their own change.
+- **Required reviewers and branch rules need a public repository or a paid GitHub plan.** On a
+  private repository on GitHub Free, `make github` stops rather than create an unprotected
+  production environment.
 
 ## Left out on purpose
 
@@ -143,7 +216,7 @@ through CloudFront every 0.5 s during each rollout.
 | Private subnets | A NAT gateway or VPC endpoints cost more than the test. Instances already accept traffic only from the ALB. |
 | WAF, access logs, flow logs, KMS keys | Paid extras; each is listed with its reason in [infra/.checkov.yaml](infra/.checkov.yaml). |
 | Baked AMIs | Instances install Docker at boot. A Packer image would cut instance start time. |
-| Terraform in CI | Infra is applied from an operator's machine. Next: plan on pull requests with a read-only role, apply on merge behind the same approval. |
+| Terraform apply in CI | Plans are tested in CI with a read-only role; applies run from an operator's machine. Next: apply on merge behind the production approval, then run the end-to-end test in CI. |
 | Canary traffic shifting | The rollout is rolling, gated by health checks and alarms. Weighted target groups would allow a canary. |
 | Signed images and provenance | GitHub attestations need Enterprise Cloud on private repositories. cosign with a KMS key is the alternative. |
 | Database migrations | The sample backend has no database. They would run as a separate, approved job before the rollout. |
@@ -153,10 +226,13 @@ through CloudFront every 0.5 s during each rollout.
 ```bash
 export AWS_PROFILE=<admin profile>
 make test                          # both apps
-make lint-infra                    # fmt, validate, tflint, checkov
+make lint-infra                    # fmt, validate, tflint, Checkov with custom policies
+make test-infra                    # Terratest plans (read-only)
+make test-infra-e2e IMAGE_TAG=<commit with an image in ECR>   # apply, test, destroy
 make bootstrap shared              # once: state bucket, OIDC, ECR, artifacts
 make staging production FIRST_IMAGE_TAG=<commit with an image in ECR>
 make github                        # GitHub environments and variables
+make destroy-env-production destroy-env-staging destroy-shared   # test accounts only
 ```
 
 After that, merging to `main` deploys. To roll back, run **p4-deploy-backend** or
