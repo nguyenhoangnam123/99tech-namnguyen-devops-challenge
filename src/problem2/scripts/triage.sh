@@ -89,6 +89,9 @@ directive() { printf '%s\n' "$nginx_conf" | awk -v d="$1" '$1 == d { gsub(/["\04
 echo "Disk triage on $(hostname) at $(date -u +%FT%TZ); kernel $(uname -r)"
 [[ $EUID -eq 0 ]] || echo "warning: not root, so other users' open files and some directories are hidden"
 df_opts=(-l -x squashfs -x devtmpfs -x efivarfs)
+# Kernel and device views are not disk; containers also mask /proc parts
+# with tiny tmpfs mounts that always look full.
+kernel_view() { [[ $1 =~ ^/(proc|sys|dev)(/|$) ]]; }
 
 section "Filesystems (bytes and inodes, local only)"
 to df -hT "${df_opts[@]}" 2>/dev/null || true
@@ -96,7 +99,7 @@ full=()
 byte_full=()
 while read -r _ _ size used _ pct mnt; do
   pct=${pct%\%}
-  if [[ ! $pct =~ ^[0-9]+$ ]] || ((pct < warn_pct)); then continue; fi
+  if [[ ! $pct =~ ^[0-9]+$ ]] || ((pct < warn_pct)) || kernel_view "$mnt"; then continue; fi
   full+=("$mnt")
   byte_full+=("$mnt")
   echo "FULL bytes: $mnt at $pct% ($((used / 1024)) of $((size / 1024)) MiB)"
@@ -104,7 +107,7 @@ done < <(to df -PTk "${df_opts[@]}" 2>/dev/null | tail -n +2 || true)
 inode_full=()
 while read -r _ inodes iused _ pct mnt; do
   pct=${pct%\%}
-  if [[ ! $pct =~ ^[0-9]+$ ]] || ((pct < warn_pct)); then continue; fi
+  if [[ ! $pct =~ ^[0-9]+$ ]] || ((pct < warn_pct)) || kernel_view "$mnt"; then continue; fi
   inode_full+=("$mnt")
   [[ " ${full[*]} " == *" $mnt "* ]] || full+=("$mnt")
   echo "FULL inodes: $mnt at $pct% ($iused of $inodes); entries per directory:"
