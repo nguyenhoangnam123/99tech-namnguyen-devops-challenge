@@ -96,7 +96,8 @@ describe.runIf(process.env.CHAOS === '1')('resilience', () => {
       });
       bids.push(bid.body.orderId);
     }
-    compose('up', '-d', 'oms-settler');
+    // start, not up: up may recreate oms-api mid-test when configs differ.
+    compose('start', 'oms-settler');
     await healthy('oms-settler');
 
     for (const id of bids) await buyer.orderWhen(id, ['FILLED']);
