@@ -10,7 +10,8 @@ NAME=p5-roles-test
 docker run -d --rm --name "$NAME" -e POSTGRES_USER=exchange -e POSTGRES_PASSWORD=test \
   -e POSTGRES_DB=exchange postgres:17.12-alpine >/dev/null
 trap 'docker rm -f "$NAME" >/dev/null 2>&1 || true' EXIT
-until docker exec "$NAME" pg_isready -U exchange -q; do sleep 1; done
+# Init runs a socket-only server first; TCP answers once the real one is up.
+until docker exec "$NAME" pg_isready -h 127.0.0.1 -U exchange -q; do sleep 1; done
 
 psql() { docker exec -i "$NAME" psql -v ON_ERROR_STOP=1 -q -U "$1" -d ledger; }
 # exchange is wave 1's role: the image's superuser. exchange_admin plays
