@@ -3,6 +3,7 @@ resource "aws_msk_configuration" "log" {
   kafka_versions = [var.msk.kafka_version]
   # The matcher's exactly-once publish (ADR 0003) needs replicated
   # transaction state, and an acknowledged write must survive a broker.
+  # Seven days: replay starts from the matcher's S3 book snapshot.
   server_properties = <<-EOT
     auto.create.topics.enable=false
     default.replication.factor=${min(var.msk.brokers, 3)}
@@ -12,6 +13,7 @@ resource "aws_msk_configuration" "log" {
     transaction.state.log.replication.factor=${min(var.msk.brokers, 3)}
     transaction.state.log.min.isr=${min(var.msk.brokers, 3) - 1}
     unclean.leader.election.enable=false
+    log.retention.hours=168
   EOT
 }
 

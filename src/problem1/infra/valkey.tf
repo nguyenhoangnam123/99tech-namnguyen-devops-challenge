@@ -24,12 +24,13 @@ resource "aws_elasticache_user" "default" {
   }
 }
 
-# oms-api signs in with its task role and may touch only rate limit keys.
+# oms-api signs in with its task role and may touch only rate limit keys;
+# -@dangerous drops FLUSHALL, KEYS and the like, which ignore key patterns.
 resource "aws_elasticache_user" "oms_api" {
   user_id       = "${local.name}-oms-api"
   user_name     = "${local.name}-oms-api"
   engine        = "valkey"
-  access_string = "on ~rl:* -@all +@connection +@read +@write +@scripting +info"
+  access_string = "on ~rl:* -@all +@connection +@read +@write +@scripting -@dangerous +info"
   authentication_mode {
     type = "iam"
   }

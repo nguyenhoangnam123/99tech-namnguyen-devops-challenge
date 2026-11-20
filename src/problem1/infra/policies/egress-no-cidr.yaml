@@ -1,0 +1,14 @@
+metadata:
+  id: CKV2_P1_3
+  name: Egress names a security group or prefix list, never an address range
+  category: NETWORKING
+definition:
+  and:
+    - cond_type: attribute
+      resource_types: [aws_vpc_security_group_egress_rule]
+      attribute: cidr_ipv4
+      operator: not_exists
+    - cond_type: attribute
+      resource_types: [aws_vpc_security_group_egress_rule]
+      attribute: cidr_ipv6
+      operator: not_exists

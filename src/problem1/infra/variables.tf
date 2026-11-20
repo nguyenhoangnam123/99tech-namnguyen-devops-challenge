@@ -57,3 +57,15 @@ variable "allow_destroy" {
   type        = bool
   default     = false
 }
+
+variable "deploy_role_name" {
+  description = "IAM role that applies this stack; it alone manages keys and Kafka topics."
+  type        = string
+  default     = "p1-terraform-deploy"
+}
+
+variable "break_glass_role_name" {
+  description = "Emergency role, used under two-person control; any use pages."
+  type        = string
+  default     = "break-glass"
+}

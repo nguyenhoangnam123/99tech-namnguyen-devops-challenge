@@ -1,7 +1,8 @@
 # One key per data class, so a key policy, a grant or a CloudTrail search
 # covers exactly one kind of data. Administered by the account, not a user.
 locals {
-  account = data.aws_caller_identity.current.account_id
+  account    = data.aws_caller_identity.current.account_id
+  key_admins = [var.deploy_role_name, var.break_glass_role_name]
   keys = {
     ledger = "Aurora storage, Performance Insights, backups"
     stream = "MSK and Valkey at rest"
@@ -25,6 +26,17 @@ resource "aws_kms_key" "data" {
         Principal = { AWS = "arn:aws:iam::${local.account}:root" }
         Action    = "kms:*"
         Resource  = "*"
+        }, {
+        # Deleting or disabling a key would make the locked backups
+        # unreadable; only break-glass and the deploy role may.
+        Sid       = "OnlyKeyAdminsMayDestroy"
+        Effect    = "Deny"
+        Principal = { AWS = "*" }
+        Action    = ["kms:ScheduleKeyDeletion", "kms:DisableKey", "kms:PutKeyPolicy"]
+        Resource  = "*"
+        Condition = {
+          ArnNotEquals = { "aws:PrincipalArn" = [for role in local.key_admins : "arn:aws:iam::${local.account}:role/${role}"] }
+        }
       }],
       each.key == "logs" ? [{
         Sid       = "CloudWatchLogsInThisAccount"

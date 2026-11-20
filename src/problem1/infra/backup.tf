@@ -14,12 +14,13 @@ resource "aws_backup_vault_lock_configuration" "ledger" {
   changeable_for_days = 3
 }
 
+# After Aurora's own 18:00-19:00 window and the Sunday maintenance window.
 resource "aws_backup_plan" "ledger" {
   name = "${local.name}-ledger"
   rule {
     rule_name         = "daily"
     target_vault_name = aws_backup_vault.ledger.name
-    schedule          = "cron(0 18 * * ? *)"
+    schedule          = "cron(0 20 * * ? *)"
     lifecycle {
       delete_after = 35
     }

@@ -1,0 +1,9 @@
+metadata:
+  id: CKV2_P1_1
+  name: Tasks have no internet route, so the VPC has no NAT gateway
+  category: NETWORKING
+definition:
+  cond_type: attribute
+  resource_types: [aws_nat_gateway]
+  attribute: subnet_id
+  operator: not_exists

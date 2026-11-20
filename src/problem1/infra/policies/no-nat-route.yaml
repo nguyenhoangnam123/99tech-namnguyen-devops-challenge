@@ -1,0 +1,9 @@
+metadata:
+  id: CKV2_P1_2
+  name: No route sends traffic through a NAT gateway
+  category: NETWORKING
+definition:
+  cond_type: attribute
+  resource_types: [aws_route]
+  attribute: nat_gateway_id
+  operator: not_exists

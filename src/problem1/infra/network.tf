@@ -97,12 +97,34 @@ resource "aws_route_table_association" "isolated" {
 }
 
 # Matcher snapshots and image layers reach S3 without the NAT data charge.
+# Only this account's buckets, plus the bucket ECR serves image layers from,
+# so a task cannot copy data to someone else's bucket.
 resource "aws_vpc_endpoint" "s3" {
   vpc_id            = aws_vpc.main.id
   service_name      = "com.amazonaws.${var.region}.s3"
   vpc_endpoint_type = "Gateway"
   route_table_ids   = [for table in aws_route_table.private : table.id]
   tags              = { Name = "${local.name}-s3" }
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "ThisAccountsBuckets"
+        Effect    = "Allow"
+        Principal = "*"
+        Action    = "s3:*"
+        Resource  = "*"
+        Condition = { StringEquals = { "aws:ResourceAccount" = local.account } }
+      },
+      {
+        Sid       = "EcrImageLayers"
+        Effect    = "Allow"
+        Principal = "*"
+        Action    = "s3:GetObject"
+        Resource  = "arn:aws:s3:::prod-${var.region}-starport-layer-bucket/*"
+      },
+    ]
+  })
 }
 
 locals {
@@ -137,6 +159,19 @@ resource "aws_vpc_endpoint" "interface" {
   security_group_ids  = [aws_security_group.endpoints.id]
   private_dns_enabled = true
   tags                = { Name = "${local.name}-${each.key}" }
+  # Callers must be this account's roles, so stolen keys from another
+  # account cannot be used through the endpoint.
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid       = "ThisAccountsPrincipals"
+      Effect    = "Allow"
+      Principal = "*"
+      Action    = "*"
+      Resource  = "*"
+      Condition = { StringEquals = { "aws:PrincipalAccount" = local.account } }
+    }]
+  })
 }
 
 # A VPC's default group admits its own members; nothing should use it.

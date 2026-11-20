@@ -4,7 +4,7 @@ SHELL := bash
 
 COMPOSE := docker compose --env-file deploy/.env -f deploy/docker-compose.yml
 
-.PHONY: help secrets up up-obs down nuke ps logs build lint typecheck test test-integration e2e chaos security perf slo gen check-gen dashboards ab aws-diagrams infra-check
+.PHONY: help secrets up up-obs down nuke ps logs build lint typecheck test test-integration e2e chaos security perf slo gen check-gen dashboards ab aws-diagrams infra-check infra-breaks
 
 help: ## List targets
 	@grep -E '^[a-z0-9-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-18s %s\n", $$1, $$2}'
@@ -114,4 +114,9 @@ infra-check: ## Terraform for AWS: fmt, validate, tests on a mocked provider, tf
 	terraform -chdir=infra test
 	docker run --rm -e GITHUB_TOKEN -v "$$PWD/infra:/data" -w /data --entrypoint sh $(TFLINT_IMAGE) \
 	  -c 'tflint --init >/dev/null && for f in *.tfvars; do tflint --var-file="$$f" || exit 1; done'
-	docker run --rm -v "$$PWD/infra:/infra" $(CHECKOV_IMAGE) --config-file /infra/.checkov.yaml -d /infra
+	docker run --rm -v "$$PWD/infra:/infra" $(CHECKOV_IMAGE) --config-file /infra/.checkov.yaml -d /infra \
+	  --external-checks-dir /infra/policies
+
+infra-breaks: ## Break each Terraform property in a scratch copy; its test or rule must fail (~8 min)
+	terraform -chdir=infra init -backend=false -input=false >/dev/null
+	infra/tests/breaks.py

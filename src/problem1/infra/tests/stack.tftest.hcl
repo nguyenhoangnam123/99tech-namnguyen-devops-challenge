@@ -92,6 +92,18 @@ run "tasks_reach_aws_only_through_endpoints" {
     ))
     error_message = "Workload HTTPS may go only to the endpoints and S3, never to an address range."
   }
+  assert {
+    condition = alltrue([
+      for endpoint in aws_vpc_endpoint.interface :
+      jsondecode(endpoint.policy).Statement[0].Condition.StringEquals["aws:PrincipalAccount"] == "123456789012"
+      && length(jsondecode(endpoint.policy).Statement) == 1
+    ])
+    error_message = "Interface endpoints must refuse callers from other accounts."
+  }
+  assert {
+    condition     = jsonencode([for statement in jsondecode(aws_vpc_endpoint.s3.policy).Statement : statement.Resource]) == jsonencode(["*", "arn:aws:s3:::prod-ap-southeast-1-starport-layer-bucket/*"]) && jsondecode(aws_vpc_endpoint.s3.policy).Statement[0].Condition.StringEquals["aws:ResourceAccount"] == "123456789012"
+    error_message = "The S3 endpoint must reach only this account's buckets and ECR's layer bucket."
+  }
 }
 
 run "data_subnets_have_no_route_out" {
@@ -204,7 +216,7 @@ run "log_survives_a_broker" {
       for setting in [
         "default.replication.factor=3", "min.insync.replicas=2", "offsets.topic.replication.factor=3",
         "transaction.state.log.replication.factor=3", "transaction.state.log.min.isr=2",
-        "unclean.leader.election.enable=false", "auto.create.topics.enable=false",
+        "unclean.leader.election.enable=false", "auto.create.topics.enable=false", "log.retention.hours=168",
       ] :
       strcontains(aws_msk_configuration.log.server_properties, setting)
     ])
@@ -244,6 +256,7 @@ run "limits_fail_over" {
       startswith(aws_elasticache_user.default.access_string, "off"),
       aws_elasticache_user.oms_api.authentication_mode[0].type == "iam",
       startswith(aws_elasticache_user.oms_api.access_string, "on ~rl:* -@all"),
+      strcontains(aws_elasticache_user.oms_api.access_string, "-@dangerous"),
     ])
     error_message = "Valkey: no shared token, the default user off, and oms-api limited to rl:* keys."
   }
@@ -279,6 +292,12 @@ run "each_service_gets_only_its_own_access" {
     error_message = "Each database client connects as its own Postgres role, and the matcher not at all."
   }
   assert {
+    condition = alltrue([
+      for policy in aws_iam_role_policy.kafka : !strcontains(policy.policy, "CreateTopic") && !strcontains(policy.policy, "AlterTopic")
+    ]) && strcontains(aws_iam_role_policy.kafka_admin.policy, "kafka-cluster:CreateTopic")
+    error_message = "Only the deploy-time admin role may create or reconfigure topics."
+  }
+  assert {
     condition     = aws_iam_role_policy.valkey.role == aws_iam_role.task["oms-api"].id
     error_message = "Only oms-api may connect to Valkey."
   }
@@ -306,6 +325,18 @@ run "network_and_keys_are_audited" {
   assert {
     condition     = alltrue([for key in aws_kms_key.data : key.enable_key_rotation])
     error_message = "Every key rotates."
+  }
+  assert {
+    condition = alltrue([
+      for key in aws_kms_key.data : anytrue([
+        for statement in jsondecode(key.policy).Statement :
+        statement.Sid == "OnlyKeyAdminsMayDestroy" && statement.Effect == "Deny"
+        && contains(statement.Action, "kms:ScheduleKeyDeletion") && contains(statement.Action, "kms:DisableKey")
+        && toset(statement.Condition.ArnNotEquals["aws:PrincipalArn"]) == toset(["arn:aws:iam::123456789012:role/p1-terraform-deploy", "arn:aws:iam::123456789012:role/break-glass"])
+        if statement.Sid == "OnlyKeyAdminsMayDestroy"
+      ])
+    ])
+    error_message = "Only the deploy and break-glass roles may delete or disable a key, or the locked backups could be made unreadable."
   }
   assert {
     condition     = length(aws_default_security_group.closed.ingress) == 0 && length(aws_default_security_group.closed.egress) == 0

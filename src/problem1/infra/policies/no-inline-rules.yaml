@@ -1,0 +1,28 @@
+metadata:
+  id: CKV2_P1_4
+  name: Security groups and route tables carry no inline rules or routes
+  category: NETWORKING
+definition:
+  or:
+    - and:
+        - cond_type: filter
+          attribute: resource_type
+          operator: within
+          value: [aws_security_group]
+        - cond_type: attribute
+          resource_types: [aws_security_group]
+          attribute: egress
+          operator: not_exists
+        - cond_type: attribute
+          resource_types: [aws_security_group]
+          attribute: ingress
+          operator: not_exists
+    - and:
+        - cond_type: filter
+          attribute: resource_type
+          operator: within
+          value: [aws_route_table]
+        - cond_type: attribute
+          resource_types: [aws_route_table]
+          attribute: route
+          operator: not_exists

@@ -21,9 +21,10 @@ resource "aws_rds_cluster_parameter_group" "ledger" {
     name  = "pgaudit.log"
     value = "ddl,role"
   }
+  # pgaudit already logs DDL; log_statement would log it twice.
   parameter {
     name  = "log_statement"
-    value = "ddl"
+    value = "none"
   }
   parameter {
     name  = "log_min_duration_statement"

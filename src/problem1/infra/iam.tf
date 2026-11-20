@@ -100,3 +100,41 @@ resource "aws_iam_role_policy" "valkey" {
     }]
   })
 }
+
+# Creates and configures the two topics at deploy time; no service may.
+resource "aws_iam_role" "kafka_admin" {
+  name = "${local.name}-kafka-admin"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { AWS = "arn:aws:iam::${local.account}:role/${var.deploy_role_name}" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "kafka_admin" {
+  name = "topics"
+  role = aws_iam_role.kafka_admin.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid      = "Connect"
+        Effect   = "Allow"
+        Action   = ["kafka-cluster:Connect", "kafka-cluster:DescribeCluster"]
+        Resource = aws_msk_cluster.log.arn
+      },
+      {
+        Sid    = "ManageTopics"
+        Effect = "Allow"
+        Action = [
+          "kafka-cluster:CreateTopic", "kafka-cluster:DescribeTopic", "kafka-cluster:AlterTopic",
+          "kafka-cluster:DescribeTopicDynamicConfiguration", "kafka-cluster:AlterTopicDynamicConfiguration",
+        ]
+        Resource = [for topic in ["orders.commands", "matcher.events"] : "${local.kafka_arn}:topic/${local.cluster}/${topic}"]
+      },
+    ]
+  })
+}
