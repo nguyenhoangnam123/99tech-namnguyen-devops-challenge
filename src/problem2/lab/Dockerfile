@@ -4,6 +4,7 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends nginx logrotate curl lvm2 \
  && rm -rf /var/lib/apt/lists/* /etc/nginx/sites-enabled/default \
  && head -c 1048576 /dev/urandom > /srv/blob.bin \
+ && head -c 65536 /dev/urandom > /srv/post.bin \
  && printf '%s\n' 'devices { obtain_device_list_from_udev = 0 }' \
       'activation { udev_sync = 0 udev_rules = 0 }' >> /etc/lvm/lvm.conf
 # A container has no udev, so LVM creates its own device nodes.

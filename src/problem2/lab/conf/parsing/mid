@@ -1,0 +1,7 @@
+/var/log/mid/*.log {
+    daily
+    rotate 7
+    postrotate
+        systemctl reload nginx >/dev/null 2>&1 || true
+    endscript
+}

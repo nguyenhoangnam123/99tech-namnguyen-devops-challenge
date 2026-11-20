@@ -1,0 +1,7 @@
+# Must not cover /var/log/sub/quoted.log: a logrotate * never matches a slash.
+/var/log/*.log {
+    weekly
+    postrotate
+        kill -HUP "$(cat /run/nginx.pid)"
+    endscript
+}

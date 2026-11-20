@@ -1,0 +1,7 @@
+# logrotate ignores this file because of its extension.
+/var/log/sub/*.log {
+    daily
+    postrotate
+        nginx -s reopen
+    endscript
+}
