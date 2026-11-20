@@ -1,0 +1,4 @@
+A: GETs before slow POSTs: 200 200 200 200 | GETs right after: 502 502 502 502 
+A: GETs with one replica stopped: 200 200 504 200 200 200 
+B: GETs before slow POSTs: 200 200 200 200 | GETs right after: 200 200 200 200 
+B: GETs with one replica stopped: 200 502 200 200 200 200 

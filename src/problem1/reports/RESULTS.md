@@ -16,7 +16,7 @@ All suites were run on a fresh default stack, telemetry off as in CI. Raw output
 | E2E transactions and contract | 30 passed | ledger invariants checked after every file |
 | Chaos | 2 passed | matcher restart rebuilt by replay; settler SIGKILL settled exactly once |
 | Abuse (pen test) | 16 passed | [tests/security.txt](tests/security.txt) |
-| OWASP ZAP API scan | 0 High, 0 Medium, 0 Low | previous round, API unchanged; [zap/](zap) |
+| OWASP ZAP API scan | 0 High, 0 Medium, 0 Low | report from commit `37022ef`, [zap/](zap); CI reruns it on every Problem 1 change |
 | Dependency audit | 0 production vulnerabilities | previous round; 2 moderate, dev-only |
 
 ## SLO catalog
@@ -75,9 +75,8 @@ seeded book:
 
 ### What drives the tail
 
-One earlier run failed the target, with a 1.5 s p99. It ran while other heavy jobs shared
-the Docker VM. Postgres slow-statement logging on a later run showed that, on this laptop,
-the order path's tail is mostly `COMMIT`:
+Postgres slow-statement logging showed that, on this laptop, the order path's tail is
+mostly `COMMIT`:
 
 - Commits averaged 43 ms and reached 110 ms: WAL fsync through Docker Desktop's virtual disk.
 - Lock waits behind settlement were 12–30 ms.
@@ -129,6 +128,12 @@ Round 1 findings:
 - **Login floods could starve trading.** Concurrent scrypt hashes starved the event loop:
   220 of 330 requests failed and Postgres pool acquisition timed out. Fixed with bounded
   hashing that sheds load with a 503.
+- **A login flood could take every API replica out of the edge.** On a CI runner, 40 of
+  150 concurrent logins waited past nginx's 10 s read timeout. nginx counts each timeout as
+  a failed server, so both replicas were dropped and every `/v1` call got 502 for up to
+  10 s. Fixed with `max_fails=0`: slow replies no longer remove a replica. In an
+  [A/B](security/edge-ejection/output.txt), GETs after slow POSTs went from 4 x 502 to
+  4 x 200; with one replica stopped, both versions lost one request in six.
 - **Slow settler failover.** A killed settler's replacement waited 25 s for its partitions.
   Fixed with static Kafka group membership; failover is now immediate.
 - **Spec not compiled until first request.** An invalid `nullable` combination only failed
