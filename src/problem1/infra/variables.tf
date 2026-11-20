@@ -19,12 +19,16 @@ variable "vpc_cidr" {
   }
 }
 
-variable "zone_count" {
-  description = "Availability Zones used by every tier."
-  type        = number
+variable "zone_ids" {
+  description = "Availability Zone IDs used by every tier, such as apse1-az1; IDs, unlike names, mean the same zone in every account."
+  type        = list(string)
   validation {
-    condition     = contains([2, 3], var.zone_count)
-    error_message = "zone_count must be 2 or 3."
+    condition     = contains([2, 3], length(distinct(var.zone_ids))) && length(distinct(var.zone_ids)) == length(var.zone_ids)
+    error_message = "zone_ids must list two or three distinct zones."
+  }
+  validation {
+    condition     = length(var.zone_ids) == 3 || var.environment != "production"
+    error_message = "production must span three zones."
   }
 }
 
@@ -39,12 +43,8 @@ variable "aurora" {
 variable "msk" {
   type = object({ instance_type = string, brokers = number, volume_gb = number, kafka_version = string })
   validation {
-    condition     = var.msk.brokers % var.zone_count == 0
-    error_message = "msk.brokers must be a multiple of zone_count; MSK spreads brokers evenly."
-  }
-  validation {
-    condition     = var.msk.brokers >= 3 || var.environment != "production"
-    error_message = "production needs three brokers for replication factor 3."
+    condition     = var.msk.brokers % length(var.zone_ids) == 0
+    error_message = "msk.brokers must be a multiple of the zone count; MSK spreads brokers evenly."
   }
 }
 

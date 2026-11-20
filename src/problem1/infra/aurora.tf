@@ -40,6 +40,7 @@ resource "aws_cloudwatch_log_group" "ledger" {
 }
 
 resource "aws_rds_cluster" "ledger" {
+  #checkov:skip=CKV_AWS_139:On unless allow_destroy, which only throwaway environments set.
   cluster_identifier                  = "${local.name}-ledger"
   engine                              = "aurora-postgresql"
   engine_version                      = var.aurora.engine_version
@@ -73,7 +74,7 @@ resource "aws_rds_cluster_instance" "ledger" {
   engine                          = aws_rds_cluster.ledger.engine
   engine_version                  = aws_rds_cluster.ledger.engine_version
   instance_class                  = var.aurora.instance_class
-  availability_zone               = keys(local.zones)[count.index % var.zone_count]
+  availability_zone               = keys(local.zones)[count.index % length(var.zone_ids)]
   publicly_accessible             = false
   auto_minor_version_upgrade      = true
   performance_insights_enabled    = true
@@ -81,6 +82,7 @@ resource "aws_rds_cluster_instance" "ledger" {
   monitoring_interval             = 15
   monitoring_role_arn             = aws_iam_role.rds_monitoring.arn
   promotion_tier                  = count.index
+  depends_on                      = [aws_iam_role_policy_attachment.rds_monitoring]
 }
 
 # Enhanced monitoring: per-process CPU and memory, which Performance

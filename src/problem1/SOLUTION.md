@@ -202,23 +202,18 @@ The version written for this design is commit `147052e`.
 The stack is never applied: it alone would cost about $1,300 a month. Instead,
 `make infra-check` and CI check it on every change, with no AWS account:
 
-| Check                                                | What it proves                                                                                                                                                                                                                                                                                                                                                  |
-| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `terraform test` on a mocked AWS provider, 14 runs   | Every tier spans three zones, and data subnets have no route out. Each store admits only its clients: the matcher cannot reach Aurora, and only `oms-api` reaches Valkey. Aurora forces TLS and keeps writer and reader in different zones. MSK replicates three ways with two in-sync replicas. Uneven broker counts are rejected. Problem 5 adds its own runs |
-| tflint with the AWS ruleset, once per `.tfvars` file | Instance types and engine values exist                                                                                                                                                                                                                                                                                                                          |
-| Checkov                                              | Problem 1's version failed 15 rules without exceptions. 12 were security hardening that Problem 5 closes; 3 are accepted with a reason in `.checkov.yaml`                                                                                                                                                                                                       |
+| Check                                                | What it proves                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `terraform test` on a mocked AWS provider, 15 runs   | Zones are pinned by ID, so a new or impaired zone cannot move a subnet. Every tier spans three zones, and data subnets have no route out. Each store admits only its clients, on its own port: the matcher cannot reach Aurora, and only `oms-api` reaches Valkey. Aurora forces TLS and keeps writer and reader in different zones. MSK replicates data, offsets and transaction state three ways. Problem 5 adds its own runs |
+| tflint with the AWS ruleset, once per `.tfvars` file | The Valkey node type exists. The ruleset checks no other value here, so engine versions were checked against the region with the AWS CLI                                                                                                                                                                                                                                                                                        |
+| Checkov                                              | Problem 1's version failed 15 rules without exceptions. Problem 5 closes 12 and pinning zones by ID closes another. The last 2 are skipped on the 7 resources they concern, each with its reason                                                                                                                                                                                                                                |
 
-How the tests were checked:
-
-- Every property was broken once on purpose, and the matching test failed.
-- One break, attaching the data subnets to the public route table, first passed every
-  test. An assertion now covers it.
+Every property was broken once on purpose, and the matching test failed.
 
 Versions were checked against ap-southeast-1: Aurora PostgreSQL 17.11, MSK with Kafka 4.1
 in KRaft mode (wave 1 runs 4.1.2), and Valkey 8.2.
 
-Writing the stack also corrected the design: MSK needs at least two brokers in two zones,
-so staging runs two small brokers, not the single broker section 7 first assumed.
+MSK needs at least two brokers in two zones, so staging runs two small brokers (section 7).
 
 ## 11. Security
 

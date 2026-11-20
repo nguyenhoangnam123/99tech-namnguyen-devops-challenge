@@ -7,12 +7,12 @@ the fixes folded into the design. Each change is marked:
 - **Added:** new.
 - **Accepted:** the risk is left as it is, with the reason.
 
-| Part                                                                         | State                                                                                                                                                        |
-| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Network, data tier and per-service identity ([Terraform](../problem1/infra)) | Built and tested on a mocked AWS provider: 14 tests, 16 deliberate breaks all caught. Checkov findings drop from 23 to 7, and the 7 are accepted (section 6) |
-| Ledger roles ([sql/roles.sql](sql/roles.sql))                                | Built and tested against Problem 1's real migrations: of 9 ledger attacks, wave 1's role succeeds at 6 and the restricted role at none (section 6)           |
-| Accounts, identity, edge, custody, detection                                 | Designed here; not built                                                                                                                                     |
-| Supply chain: OIDC, pinned actions, signed images, scans                     | Already done in [Problem 4](../problem4/SOLUTION.md) and the Problem 1 CI; not repeated                                                                      |
+| Part                                                                         | State                                                                                                                                                                            |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Network, data tier and per-service identity ([Terraform](../problem1/infra)) | Built and tested on a mocked AWS provider: 15 tests, 27 deliberate breaks all caught. Checkov findings drop from 23 to 7, each skipped on its resource with a reason (section 6) |
+| Ledger roles ([sql/roles.sql](sql/roles.sql))                                | Built and tested against Problem 1's real migrations: of 9 ledger attacks, wave 1's role succeeds at 6 and the restricted role at none (section 6)                               |
+| Accounts, identity, edge, custody, detection                                 | Designed here; not built                                                                                                                                                         |
+| Supply chain: OIDC, pinned actions, signed images, scans                     | Already done in [Problem 4](../problem4/SOLUTION.md) and the Problem 1 CI; not repeated                                                                                          |
 
 ## 1. The updated architecture
 
@@ -236,18 +236,18 @@ step before rollout.
 
 The security diff is `git diff 147052e -- src/problem1/infra`.
 
-| Measure                                  | Problem 1                 | After this review                          |
-| ---------------------------------------- | ------------------------- | ------------------------------------------ |
-| Checkov findings without exceptions      | 23 from 15 rules          | 7 from 3 rules, all accepted with a reason |
-| Tests on a mocked AWS provider           | 10                        | 14                                         |
-| Deliberate breaks, each caught by a test | 10                        | 16                                         |
-| Long-lived passwords in Terraform state  | 5 (4 Kafka users, Valkey) | 0                                          |
+| Measure                                  | Problem 1                 | After this review                                          |
+| ---------------------------------------- | ------------------------- | ---------------------------------------------------------- |
+| Checkov findings without exceptions      | 23 from 15 rules          | 7 from 2 rules, each skipped on its resource with a reason |
+| Tests on a mocked AWS provider           | 10                        | 15                                                         |
+| Deliberate breaks, each caught by a test | 10                        | 27                                                         |
+| Long-lived passwords in Terraform state  | 5 (4 Kafka users, Valkey) | 0                                                          |
 
-The three accepted rules, with reasons in `.checkov.yaml`:
+The two remaining rules are skipped inline:
 
-- deletion protection that Checkov cannot evaluate;
-- workload security groups that the ECS stack attaches;
-- zone selection that already ignores new zones.
+- deletion protection, which is on unless `allow_destroy` is set and Checkov cannot
+  evaluate;
+- the six workload security groups, which the ECS stack attaches.
 
 ### Cost of the review
 

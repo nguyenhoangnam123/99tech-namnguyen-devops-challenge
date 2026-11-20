@@ -2,7 +2,11 @@
 # cost. Checks the properties the P1 design relies on.
 mock_provider "aws" {
   mock_data "aws_availability_zones" {
-    defaults = { names = ["ap-southeast-1a", "ap-southeast-1b", "ap-southeast-1c"] }
+    # The real mapping in one account: names and IDs do not line up.
+    defaults = {
+      names    = ["ap-southeast-1a", "ap-southeast-1b", "ap-southeast-1c"]
+      zone_ids = ["apse1-az2", "apse1-az1", "apse1-az3"]
+    }
   }
   mock_data "aws_caller_identity" {
     defaults = { account_id = "123456789012" }
@@ -50,10 +54,17 @@ override_resource {
 variables {
   environment = "production"
   vpc_cidr    = "10.20.0.0/16"
-  zone_count  = 3
+  zone_ids    = ["apse1-az1", "apse1-az2", "apse1-az3"]
   aurora      = { instance_class = "db.r7g.large", instances = 2, engine_version = "17.11" }
   msk         = { instance_type = "kafka.m7g.large", brokers = 3, volume_gb = 100, kafka_version = "4.1.x.kraft" }
   valkey      = { node_type = "cache.t4g.small", engine_version = "8.2" }
+}
+
+run "zones_follow_their_ids" {
+  assert {
+    condition     = aws_subnet.public["ap-southeast-1b"].cidr_block == "10.20.0.0/20" && aws_subnet.isolated["ap-southeast-1a"].cidr_block == "10.20.144.0/20"
+    error_message = "Subnets must be placed by zone ID, so the same ID keeps the same CIDR."
+  }
 }
 
 run "every_tier_spans_three_zones" {
@@ -89,6 +100,8 @@ run "data_subnets_have_no_route_out" {
       [aws_route.public_internet.route_table_id != aws_route_table.isolated.id],
       [!contains(aws_vpc_endpoint.s3.route_table_ids, aws_route_table.isolated.id)],
       [for association in aws_route_table_association.isolated : association.route_table_id == aws_route_table.isolated.id],
+      [length(aws_route_table.isolated.route) == 0],
+      [for table in aws_route_table.private : length(table.route) == 0],
     ))
     error_message = "The isolated route table must keep only the local route."
   }
@@ -119,6 +132,33 @@ run "each_store_admits_only_its_clients" {
       rule.cidr_ipv4 == null && rule.cidr_ipv6 == null && rule.referenced_security_group_id != null
     ])
     error_message = "Data store ingress must name a workload security group, never an address range."
+  }
+  assert {
+    condition = alltrue([
+      for key, rule in aws_vpc_security_group_ingress_rule.store :
+      rule.security_group_id == aws_security_group.store[split("/", key)[0]].id &&
+      rule.referenced_security_group_id == aws_security_group.workload[split("/", key)[1]].id &&
+      rule.from_port == { aurora = 5432, msk = 9098, valkey = 6379 }[split("/", key)[0]] && rule.to_port == rule.from_port
+    ])
+    error_message = "Each grant must sit on its store's group, name its client's group and open only the store's port."
+  }
+  assert {
+    condition = alltrue([
+      aws_rds_cluster.ledger.vpc_security_group_ids == toset([aws_security_group.store["aurora"].id]),
+      toset(aws_msk_cluster.log.broker_node_group_info[0].security_groups) == toset([aws_security_group.store["msk"].id]),
+      aws_elasticache_replication_group.limits.security_group_ids == toset([aws_security_group.store["valkey"].id]),
+      alltrue([for group in aws_security_group.store : length(group.ingress) == 0]),
+    ])
+    error_message = "Each store must use its own group, and no group may carry inline rules."
+  }
+  assert {
+    condition = alltrue([
+      aws_vpc_security_group_ingress_rule.msk_metrics.referenced_security_group_id == aws_security_group.workload["adot"].id,
+      aws_vpc_security_group_ingress_rule.msk_metrics.from_port == 11001 && aws_vpc_security_group_ingress_rule.msk_metrics.to_port == 11002,
+      toset(keys(aws_vpc_security_group_ingress_rule.otlp)) == toset(["oms-api", "oms-relay", "oms-settler", "matcher", "marketdata"]),
+      alltrue([for rule in aws_vpc_security_group_ingress_rule.otlp : rule.security_group_id == aws_security_group.workload["adot"].id && rule.from_port == 4318]),
+    ])
+    error_message = "Only the collector may scrape the brokers, and every service may send it OTLP."
   }
 }
 
@@ -161,7 +201,11 @@ run "ledger_is_durable_and_private" {
 run "log_survives_a_broker" {
   assert {
     condition = alltrue([
-      for setting in ["default.replication.factor=3", "min.insync.replicas=2", "transaction.state.log.min.isr=2", "unclean.leader.election.enable=false", "auto.create.topics.enable=false"] :
+      for setting in [
+        "default.replication.factor=3", "min.insync.replicas=2", "offsets.topic.replication.factor=3",
+        "transaction.state.log.replication.factor=3", "transaction.state.log.min.isr=2",
+        "unclean.leader.election.enable=false", "auto.create.topics.enable=false",
+      ] :
       strcontains(aws_msk_configuration.log.server_properties, setting)
     ])
     error_message = "MSK must replicate three ways and acknowledge only in-sync writes."
@@ -186,6 +230,7 @@ run "limits_fail_over" {
       aws_elasticache_replication_group.limits.multi_az_enabled,
       aws_elasticache_replication_group.limits.automatic_failover_enabled,
       aws_elasticache_replication_group.limits.num_cache_clusters == 2,
+      length(distinct(aws_elasticache_replication_group.limits.preferred_cache_cluster_azs)) == 2,
       tostring(aws_elasticache_replication_group.limits.transit_encryption_enabled) == "true",
       tostring(aws_elasticache_replication_group.limits.at_rest_encryption_enabled) == "true",
     ])
@@ -282,28 +327,13 @@ run "ledger_backups_cannot_be_deleted_early" {
 }
 
 run "staging_is_smaller_but_still_spans_zones" {
-  # Distinct key ARNs, so a store on the wrong key fails its test.
-  override_resource {
-    target = aws_kms_key.data["ledger"]
-    values = { arn = "arn:aws:kms:ap-southeast-1:123456789012:key/ledger" }
-  }
-
-  override_resource {
-    target = aws_kms_key.data["stream"]
-    values = { arn = "arn:aws:kms:ap-southeast-1:123456789012:key/stream" }
-  }
-
-  override_resource {
-    target = aws_kms_key.data["logs"]
-    values = { arn = "arn:aws:kms:ap-southeast-1:123456789012:key/logs" }
-  }
-
   variables {
     environment = "staging"
     vpc_cidr    = "10.21.0.0/16"
-    zone_count  = 2
+    zone_ids    = ["apse1-az1", "apse1-az2"]
     aurora      = { instance_class = "db.t4g.medium", instances = 1, engine_version = "17.11" }
     msk         = { instance_type = "kafka.t3.small", brokers = 2, volume_gb = 20, kafka_version = "4.1.x.kraft" }
+    valkey      = { node_type = "cache.t4g.micro", engine_version = "8.2" }
   }
   assert {
     condition     = length(aws_subnet.isolated) == 2 && length(aws_vpc_endpoint.interface["logs"].subnet_ids) == 2
@@ -317,69 +347,21 @@ run "staging_is_smaller_but_still_spans_zones" {
 
 run "rejects_an_unknown_environment" {
   command = plan
-  # Distinct key ARNs, so a store on the wrong key fails its test.
-  override_resource {
-    target = aws_kms_key.data["ledger"]
-    values = { arn = "arn:aws:kms:ap-southeast-1:123456789012:key/ledger" }
-  }
-
-  override_resource {
-    target = aws_kms_key.data["stream"]
-    values = { arn = "arn:aws:kms:ap-southeast-1:123456789012:key/stream" }
-  }
-
-  override_resource {
-    target = aws_kms_key.data["logs"]
-    values = { arn = "arn:aws:kms:ap-southeast-1:123456789012:key/logs" }
-  }
-
   variables { environment = "dev" }
   expect_failures = [var.environment]
 }
 
 run "rejects_uneven_brokers" {
   command = plan
-  # Distinct key ARNs, so a store on the wrong key fails its test.
-  override_resource {
-    target = aws_kms_key.data["ledger"]
-    values = { arn = "arn:aws:kms:ap-southeast-1:123456789012:key/ledger" }
-  }
-
-  override_resource {
-    target = aws_kms_key.data["stream"]
-    values = { arn = "arn:aws:kms:ap-southeast-1:123456789012:key/stream" }
-  }
-
-  override_resource {
-    target = aws_kms_key.data["logs"]
-    values = { arn = "arn:aws:kms:ap-southeast-1:123456789012:key/logs" }
-  }
-
   variables { msk = { instance_type = "kafka.m7g.large", brokers = 4, volume_gb = 100, kafka_version = "4.1.x.kraft" } }
   expect_failures = [var.msk]
 }
 
-run "production_needs_three_brokers" {
+run "production_needs_three_zones" {
   command = plan
-  # Distinct key ARNs, so a store on the wrong key fails its test.
-  override_resource {
-    target = aws_kms_key.data["ledger"]
-    values = { arn = "arn:aws:kms:ap-southeast-1:123456789012:key/ledger" }
-  }
-
-  override_resource {
-    target = aws_kms_key.data["stream"]
-    values = { arn = "arn:aws:kms:ap-southeast-1:123456789012:key/stream" }
-  }
-
-  override_resource {
-    target = aws_kms_key.data["logs"]
-    values = { arn = "arn:aws:kms:ap-southeast-1:123456789012:key/logs" }
-  }
-
   variables {
-    zone_count = 2
-    msk        = { instance_type = "kafka.m7g.large", brokers = 2, volume_gb = 100, kafka_version = "4.1.x.kraft" }
+    zone_ids = ["apse1-az1", "apse1-az2"]
+    msk      = { instance_type = "kafka.m7g.large", brokers = 2, volume_gb = 100, kafka_version = "4.1.x.kraft" }
   }
-  expect_failures = [var.msk]
+  expect_failures = [var.zone_ids]
 }

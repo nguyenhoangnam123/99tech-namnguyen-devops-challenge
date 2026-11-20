@@ -1,5 +1,6 @@
 # One task role per service. The ECS stack attaches them; each grants
 # only what that service's code does, so a compromised task stays small.
+# adot's write access belongs to the observability stack that owns it.
 locals {
   kafka_arn = "arn:aws:kafka:${var.region}:${local.account}"
   cluster   = "${aws_msk_cluster.log.cluster_name}/${aws_msk_cluster.log.cluster_uuid}"

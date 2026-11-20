@@ -1,11 +1,5 @@
 framework: [terraform]
 compact: true
 quiet: true
-skip-check:
-  # Accepted. deletion_protection is on unless allow_destroy, which only
-  # throwaway environments set; Checkov cannot evaluate the expression.
-  - CKV_AWS_139
-  # Workload groups are attached by the ECS stack, not this one.
-  - CKV2_AWS_5
-  # Zones are sorted and sliced to zone_count, so a new zone changes nothing.
-  - CKV_AWS_394
+# Accepted findings are skipped inline on the resource, with the reason,
+# so the same rule still checks every other resource.

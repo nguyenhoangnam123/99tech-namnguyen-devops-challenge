@@ -1,5 +1,5 @@
 locals {
-  workloads = toset(["oms-api", "oms-relay", "oms-settler", "matcher", "marketdata"])
+  workloads = toset(["oms-api", "oms-relay", "oms-settler", "matcher", "marketdata", "adot"])
   # Who may open a connection to each data store; nothing else can.
   # The matcher never touches the database, and only oms-api uses Valkey.
   stores = {
@@ -16,6 +16,7 @@ locals {
 
 # ECS services attach these; the compute stack is not part of this one.
 resource "aws_security_group" "workload" {
+  #checkov:skip=CKV2_AWS_5:Attached by the ECS services, which live in another stack.
   for_each    = local.workloads
   name        = "${local.name}-${each.key}"
   description = "${each.key} tasks"
@@ -70,4 +71,44 @@ resource "aws_vpc_security_group_egress_rule" "s3" {
   from_port         = 443
   to_port           = 443
   description       = "S3 through the gateway endpoint"
+}
+
+# Every service sends OTLP over HTTP to the ADOT collector.
+resource "aws_vpc_security_group_ingress_rule" "otlp" {
+  for_each                     = setsubtract(local.workloads, ["adot"])
+  security_group_id            = aws_security_group.workload["adot"].id
+  referenced_security_group_id = aws_security_group.workload[each.key].id
+  ip_protocol                  = "tcp"
+  from_port                    = 4318
+  to_port                      = 4318
+  description                  = "OTLP from ${each.key}"
+}
+
+resource "aws_vpc_security_group_egress_rule" "otlp" {
+  for_each                     = setsubtract(local.workloads, ["adot"])
+  security_group_id            = aws_security_group.workload[each.key].id
+  referenced_security_group_id = aws_security_group.workload["adot"].id
+  ip_protocol                  = "tcp"
+  from_port                    = 4318
+  to_port                      = 4318
+  description                  = "OTLP to the collector"
+}
+
+# The collector scrapes the brokers' JMX and node exporters.
+resource "aws_vpc_security_group_ingress_rule" "msk_metrics" {
+  security_group_id            = aws_security_group.store["msk"].id
+  referenced_security_group_id = aws_security_group.workload["adot"].id
+  ip_protocol                  = "tcp"
+  from_port                    = 11001
+  to_port                      = 11002
+  description                  = "Prometheus scrape from adot"
+}
+
+resource "aws_vpc_security_group_egress_rule" "msk_metrics" {
+  security_group_id            = aws_security_group.workload["adot"].id
+  referenced_security_group_id = aws_security_group.store["msk"].id
+  ip_protocol                  = "tcp"
+  from_port                    = 11001
+  to_port                      = 11002
+  description                  = "Prometheus scrape of the brokers"
 }

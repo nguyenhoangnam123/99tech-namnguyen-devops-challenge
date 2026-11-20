@@ -43,21 +43,22 @@ resource "aws_elasticache_user_group" "limits" {
 
 # Rate limit counters only: losing them resets windows, so no snapshots.
 resource "aws_elasticache_replication_group" "limits" {
-  replication_group_id       = "${local.name}-limits"
-  description                = "Rate limit counters for oms-api"
-  engine                     = "valkey"
-  engine_version             = var.valkey.engine_version
-  parameter_group_name       = aws_elasticache_parameter_group.limits.name
-  node_type                  = var.valkey.node_type
-  num_cache_clusters         = 2
-  automatic_failover_enabled = true
-  multi_az_enabled           = true
-  subnet_group_name          = aws_elasticache_subnet_group.limits.name
-  security_group_ids         = [aws_security_group.store["valkey"].id]
-  at_rest_encryption_enabled = true
-  kms_key_id                 = aws_kms_key.data["stream"].arn
-  transit_encryption_enabled = true
-  user_group_ids             = [aws_elasticache_user_group.limits.user_group_id]
-  auto_minor_version_upgrade = true
-  maintenance_window         = "sun:19:00-sun:20:00"
+  replication_group_id        = "${local.name}-limits"
+  description                 = "Rate limit counters for oms-api"
+  engine                      = "valkey"
+  engine_version              = var.valkey.engine_version
+  parameter_group_name        = aws_elasticache_parameter_group.limits.name
+  node_type                   = var.valkey.node_type
+  num_cache_clusters          = 2
+  preferred_cache_cluster_azs = slice(keys(local.zones), 0, 2)
+  automatic_failover_enabled  = true
+  multi_az_enabled            = true
+  subnet_group_name           = aws_elasticache_subnet_group.limits.name
+  security_group_ids          = [aws_security_group.store["valkey"].id]
+  at_rest_encryption_enabled  = true
+  kms_key_id                  = aws_kms_key.data["stream"].arn
+  transit_encryption_enabled  = true
+  user_group_ids              = [aws_elasticache_user_group.limits.user_group_id]
+  auto_minor_version_upgrade  = true
+  maintenance_window          = "sun:19:00-sun:20:00"
 }

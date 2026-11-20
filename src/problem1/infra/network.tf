@@ -1,10 +1,17 @@
-data "aws_availability_zones" "available" {
-  state = "available"
+# Pinned by zone ID: a new Local Zone or an impaired zone cannot shift the
+# list, which would replace subnets and with them the MSK cluster.
+data "aws_availability_zones" "pinned" {
+  all_availability_zones = true
+  filter {
+    name   = "zone-id"
+    values = var.zone_ids
+  }
 }
 
 locals {
-  name  = "p1-${var.environment}"
-  zones = { for i, zone in slice(sort(data.aws_availability_zones.available.names), 0, var.zone_count) : zone => i }
+  name       = "p1-${var.environment}"
+  zone_names = zipmap(data.aws_availability_zones.pinned.zone_ids, data.aws_availability_zones.pinned.names)
+  zones      = { for i, id in var.zone_ids : local.zone_names[id] => i }
   # Three /20 tiers per zone: public (ALB, NAT), private (tasks),
   # isolated (data stores, no route out of the VPC).
   tiers = { public = 0, private = 4, isolated = 8 }
