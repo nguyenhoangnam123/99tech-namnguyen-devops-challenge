@@ -15,7 +15,7 @@ GRAPH = {"fontsize": "22", "fontname": "DejaVu Sans", "pad": "0.5", "nodesep": "
          "ranksep": "0.9", "splines": "spline", "labelloc": "t"}
 NODE = {"fontsize": "13", "fontname": "DejaVu Sans"}
 EDGE = {"fontsize": "11", "fontname": "DejaVu Sans"}
-# Fill marks what the review did: green added, amber changed, grey accepted.
+# Fill marks what the review did: green added, amber changed.
 ADDED = {"bgcolor": "#e9f7ef", "pencolor": "#1e8449", "penwidth": "2"}
 CHANGED = {"bgcolor": "#fef5e7", "pencolor": "#b9770e", "penwidth": "2"}
 ACCOUNT = {"bgcolor": "#ffffff", "pencolor": "#5d6d7e", "penwidth": "2", "style": "dashed"}
@@ -88,10 +88,11 @@ with Diagram("Exchange on AWS after the security review: green added, amber chan
     api >> money("order + hold") >> aurora
     api >> control("limits") >> cache
     relay >> events("commands") >> msk
-    matcher >> events("events", dir="both") >> msk
-    settler >> events("events", dir="back") >> msk
+    msk >> events("commands") >> matcher
+    matcher >> events("events") >> msk
+    msk >> events("events") >> settler
     settler >> money("ledger") >> aurora
-    md >> events(dir="back") >> msk
+    msk >> events() >> md
 
     api >> money("withdrawal request\nafter step-up") >> withdraw
     withdraw >> money("sign") >> hsm
