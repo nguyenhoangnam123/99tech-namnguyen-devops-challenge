@@ -1,7 +1,3 @@
-locals {
-  kafka_clients = toset(local.stores.msk.clients)
-}
-
 resource "aws_msk_configuration" "log" {
   name           = "${local.name}-log"
   kafka_versions = [var.msk.kafka_version]
@@ -21,7 +17,8 @@ resource "aws_msk_configuration" "log" {
 
 resource "aws_cloudwatch_log_group" "msk" {
   name              = "/p1/${var.environment}/msk"
-  retention_in_days = 30
+  retention_in_days = 365
+  kms_key_id        = aws_kms_key.data["logs"].arn
 }
 
 resource "aws_msk_cluster" "log" {
@@ -45,14 +42,17 @@ resource "aws_msk_cluster" "log" {
     revision = aws_msk_configuration.log.latest_revision
   }
 
+  # IAM, not SCRAM: no passwords to store or rotate, and each task role
+  # names the topics, groups and transactional ids it may use (iam.tf).
   client_authentication {
     unauthenticated = false
     sasl {
-      scram = true
+      iam = true
     }
   }
 
   encryption_info {
+    encryption_at_rest_kms_key_arn = aws_kms_key.data["stream"].arn
     encryption_in_transit {
       client_broker = "TLS"
       in_cluster    = true
@@ -79,48 +79,4 @@ resource "aws_msk_cluster" "log" {
       }
     }
   }
-}
-
-# MSK only reads SCRAM secrets encrypted with a customer managed key.
-resource "aws_kms_key" "msk_users" {
-  description         = "${local.name} MSK SCRAM credentials"
-  enable_key_rotation = true
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Sid       = "AccountAdministers"
-      Effect    = "Allow"
-      Principal = { AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root" }
-      Action    = "kms:*"
-      Resource  = "*"
-    }]
-  })
-}
-
-data "aws_caller_identity" "current" {}
-
-resource "random_password" "kafka" {
-  for_each = local.kafka_clients
-  length   = 32
-  special  = false
-}
-
-# One SCRAM user per service, so each can be rotated and traced alone.
-resource "aws_secretsmanager_secret" "kafka" {
-  for_each                = local.kafka_clients
-  name                    = "AmazonMSK_${local.name}-${each.key}"
-  kms_key_id              = aws_kms_key.msk_users.arn
-  recovery_window_in_days = var.allow_destroy ? 0 : 30
-}
-
-resource "aws_secretsmanager_secret_version" "kafka" {
-  for_each      = local.kafka_clients
-  secret_id     = aws_secretsmanager_secret.kafka[each.key].id
-  secret_string = jsonencode({ username = each.key, password = random_password.kafka[each.key].result })
-}
-
-resource "aws_msk_scram_secret_association" "log" {
-  cluster_arn     = aws_msk_cluster.log.arn
-  secret_arn_list = [for secret in aws_secretsmanager_secret.kafka : secret.arn]
-  depends_on      = [aws_secretsmanager_secret_version.kafka]
 }

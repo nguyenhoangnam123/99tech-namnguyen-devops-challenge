@@ -28,11 +28,6 @@ variable "zone_count" {
   }
 }
 
-variable "nat_per_zone" {
-  description = "One NAT gateway per zone, so losing a zone keeps egress in the others."
-  type        = bool
-}
-
 variable "aurora" {
   type = object({ instance_class = string, instances = number, engine_version = string })
   validation {

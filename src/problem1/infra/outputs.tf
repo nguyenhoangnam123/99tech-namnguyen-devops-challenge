@@ -10,29 +10,31 @@ output "subnet_ids" {
   }
 }
 
-output "workload_security_group_ids" {
-  description = "Attach to the matching ECS service."
-  value       = { for name, group in aws_security_group.workload : name => group.id }
+output "workloads" {
+  description = "Security group and task role for each ECS service."
+  value = {
+    for name in local.workloads : name => {
+      security_group_id = aws_security_group.workload[name].id
+      task_role_arn     = aws_iam_role.task[name].arn
+    }
+  }
 }
 
 output "database" {
   value = {
-    writer        = aws_rds_cluster.ledger.endpoint
-    reader        = aws_rds_cluster.ledger.reader_endpoint
-    master_secret = aws_rds_cluster.ledger.master_user_secret[0].secret_arn
+    writer = aws_rds_cluster.ledger.endpoint
+    reader = aws_rds_cluster.ledger.reader_endpoint
+    users  = local.database_users
   }
 }
 
-output "kafka" {
-  value = {
-    bootstrap_brokers = aws_msk_cluster.log.bootstrap_brokers_sasl_scram
-    user_secrets      = { for name, secret in aws_secretsmanager_secret.kafka : name => secret.arn }
-  }
+output "kafka_bootstrap_brokers" {
+  value = aws_msk_cluster.log.bootstrap_brokers_sasl_iam
 }
 
 output "valkey" {
   value = {
-    endpoint    = aws_elasticache_replication_group.limits.primary_endpoint_address
-    auth_secret = aws_secretsmanager_secret.valkey.arn
+    endpoint = aws_elasticache_replication_group.limits.primary_endpoint_address
+    user     = aws_elasticache_user.oms_api.user_name
   }
 }

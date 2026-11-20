@@ -4,7 +4,7 @@ locals {
   # The matcher never touches the database, and only oms-api uses Valkey.
   stores = {
     aurora = { port = 5432, clients = ["oms-api", "oms-relay", "oms-settler"] }
-    msk    = { port = 9096, clients = ["oms-relay", "oms-settler", "matcher", "marketdata"] }
+    msk    = { port = 9098, clients = ["oms-relay", "oms-settler", "matcher", "marketdata"] }
     valkey = { port = 6379, clients = ["oms-api"] }
   }
   grants = merge([
@@ -51,13 +51,23 @@ resource "aws_vpc_security_group_egress_rule" "to_store" {
   description                  = "to ${each.value.store}"
 }
 
-# AWS APIs, ECR and the telemetry back ends, through the NAT gateways.
-resource "aws_vpc_security_group_egress_rule" "https" {
+# HTTPS only to the interface endpoints and S3; no other way out.
+resource "aws_vpc_security_group_egress_rule" "endpoints" {
+  for_each                     = local.workloads
+  security_group_id            = aws_security_group.workload[each.key].id
+  referenced_security_group_id = aws_security_group.endpoints.id
+  ip_protocol                  = "tcp"
+  from_port                    = 443
+  to_port                      = 443
+  description                  = "AWS APIs through interface endpoints"
+}
+
+resource "aws_vpc_security_group_egress_rule" "s3" {
   for_each          = local.workloads
   security_group_id = aws_security_group.workload[each.key].id
-  cidr_ipv4         = "0.0.0.0/0"
+  prefix_list_id    = aws_vpc_endpoint.s3.prefix_list_id
   ip_protocol       = "tcp"
   from_port         = 443
   to_port           = 443
-  description       = "AWS APIs over HTTPS"
+  description       = "S3 through the gateway endpoint"
 }

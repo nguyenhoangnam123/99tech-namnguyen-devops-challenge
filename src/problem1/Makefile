@@ -106,11 +106,12 @@ aws-diagrams: ## Render the AWS diagrams in docs/aws/img (Docker only)
 TFLINT_IMAGE := ghcr.io/terraform-linters/tflint:v0.59.1
 CHECKOV_IMAGE := bridgecrew/checkov:3.4.5
 
+# GITHUB_TOKEN, if set, lifts GitHub's rate limit on tflint's plugin download.
 infra-check: ## Terraform for AWS: fmt, validate, tests on a mocked provider, tflint, checkov
 	terraform -chdir=infra fmt -check -recursive
 	terraform -chdir=infra init -backend=false -input=false >/dev/null
 	terraform -chdir=infra validate
 	terraform -chdir=infra test
-	docker run --rm -v "$$PWD/infra:/data" -w /data --entrypoint sh $(TFLINT_IMAGE) \
+	docker run --rm -e GITHUB_TOKEN -v "$$PWD/infra:/data" -w /data --entrypoint sh $(TFLINT_IMAGE) \
 	  -c 'tflint --init >/dev/null && for f in *.tfvars; do tflint --var-file="$$f" || exit 1; done'
 	docker run --rm -v "$$PWD/infra:/infra" $(CHECKOV_IMAGE) --config-file /infra/.checkov.yaml -d /infra

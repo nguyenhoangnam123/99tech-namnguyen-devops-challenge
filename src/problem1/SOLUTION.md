@@ -191,25 +191,28 @@ with error budgets and burn-rate alerts (page at 14.4x over 1 h and 5 min; ticke
 
 [infra/](infra) is the assessment tier's network and data tier as Terraform:
 
-- the VPC, subnets, NAT gateways and the S3 endpoint;
-- one security group per service;
+- the VPC, subnets and endpoints;
+- one security group and one task role per service;
 - Aurora, MSK and Valkey.
 
-ECS, the ALB and the edge follow the Problem 4 pattern and are not repeated. The stack is
-never applied: it alone would cost about $1,300 a month. Instead, `make infra-check` and
-CI check it on every change, with no AWS account:
+ECS, the ALB and the edge follow the Problem 4 pattern and are not repeated. The stack now
+includes Problem 5's security changes, which removed the NAT gateways among other things.
+The version written for this design is commit `147052e`.
 
-| Check                                                | What it proves                                                                                                                                                                                                                                                                                                                                              |
-| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `terraform test` on a mocked AWS provider, 10 runs   | Every tier spans three zones, with a NAT gateway per zone. Data subnets have no route out. Each store admits only its clients: the matcher cannot reach Aurora, and only `oms-api` reaches Valkey. Aurora forces TLS and keeps writer and reader in different zones. MSK replicates three ways with two in-sync replicas. Uneven broker counts are rejected |
-| tflint with the AWS ruleset, once per `.tfvars` file | Instance types and engine values exist                                                                                                                                                                                                                                                                                                                      |
-| Checkov                                              | Without exceptions, 15 rules fail (23 findings). 3 are accepted with a reason in `.checkov.yaml`; the other 12 are security hardening, left to Problem 5                                                                                                                                                                                                    |
+The stack is never applied: it alone would cost about $1,300 a month. Instead,
+`make infra-check` and CI check it on every change, with no AWS account:
+
+| Check                                                | What it proves                                                                                                                                                                                                                                                                                                                                                  |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `terraform test` on a mocked AWS provider, 14 runs   | Every tier spans three zones, and data subnets have no route out. Each store admits only its clients: the matcher cannot reach Aurora, and only `oms-api` reaches Valkey. Aurora forces TLS and keeps writer and reader in different zones. MSK replicates three ways with two in-sync replicas. Uneven broker counts are rejected. Problem 5 adds its own runs |
+| tflint with the AWS ruleset, once per `.tfvars` file | Instance types and engine values exist                                                                                                                                                                                                                                                                                                                          |
+| Checkov                                              | Problem 1's version failed 15 rules without exceptions. 12 were security hardening that Problem 5 closes; 3 are accepted with a reason in `.checkov.yaml`                                                                                                                                                                                                       |
 
 How the tests were checked:
 
-- Nine deliberate breaks, one per property, each failed its test.
-- A tenth break, attaching the data subnets to the public route table, passed every test
-  until an assertion was added for it.
+- Every property was broken once on purpose, and the matching test failed.
+- One break, attaching the data subnets to the public route table, first passed every
+  test. An assertion now covers it.
 
 Versions were checked against ap-southeast-1: Aurora PostgreSQL 17.11, MSK with Kafka 4.1
 in KRaft mode (wave 1 runs 4.1.2), and Valkey 8.2.
@@ -219,5 +222,5 @@ so staging runs two small brokers, not the single broker section 7 first assumed
 
 ## 11. Security
 
-Problem 5 takes this architecture and secures it: identity, network boundaries, data
-protection, custody, and what is deliberately left out.
+[Problem 5](../problem5/SOLUTION.md) takes this architecture and secures it: identity,
+network boundaries, data protection, custody, and what is deliberately left out.

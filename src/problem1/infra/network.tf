@@ -63,36 +63,12 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
-locals {
-  # Staging shares one NAT gateway in the first zone.
-  nat_zones = var.nat_per_zone ? local.zones : { (keys(local.zones)[0]) = 0 }
-}
-
-resource "aws_eip" "nat" {
-  for_each = local.nat_zones
-  domain   = "vpc"
-  tags     = { Name = "${local.name}-nat-${each.key}" }
-}
-
-resource "aws_nat_gateway" "main" {
-  for_each      = local.nat_zones
-  allocation_id = aws_eip.nat[each.key].id
-  subnet_id     = aws_subnet.public[each.key].id
-  tags          = { Name = "${local.name}-${each.key}" }
-  depends_on    = [aws_internet_gateway.main]
-}
-
+# Tasks have no route to the internet. AWS APIs are reached through
+# interface endpoints and S3 through its gateway endpoint.
 resource "aws_route_table" "private" {
   for_each = local.zones
   vpc_id   = aws_vpc.main.id
   tags     = { Name = "${local.name}-private-${each.key}" }
-}
-
-resource "aws_route" "private_nat" {
-  for_each               = local.zones
-  route_table_id         = aws_route_table.private[each.key].id
-  destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = aws_nat_gateway.main[var.nat_per_zone ? each.key : keys(local.zones)[0]].id
 }
 
 resource "aws_route_table_association" "private" {
@@ -120,4 +96,84 @@ resource "aws_vpc_endpoint" "s3" {
   vpc_endpoint_type = "Gateway"
   route_table_ids   = [for table in aws_route_table.private : table.id]
   tags              = { Name = "${local.name}-s3" }
+}
+
+locals {
+  # Everything the tasks and the telemetry collector call: image pulls,
+  # logs, secrets, Managed Prometheus and X-Ray.
+  interface_endpoints = toset(["ecr.api", "ecr.dkr", "logs", "secretsmanager", "aps-workspaces", "xray"])
+}
+
+resource "aws_security_group" "endpoints" {
+  name        = "${local.name}-endpoints"
+  description = "Interface endpoints: HTTPS from workloads only"
+  vpc_id      = aws_vpc.main.id
+  tags        = { Name = "${local.name}-endpoints" }
+}
+
+resource "aws_vpc_security_group_ingress_rule" "endpoints" {
+  for_each                     = local.workloads
+  security_group_id            = aws_security_group.endpoints.id
+  referenced_security_group_id = aws_security_group.workload[each.key].id
+  ip_protocol                  = "tcp"
+  from_port                    = 443
+  to_port                      = 443
+  description                  = "from ${each.key}"
+}
+
+resource "aws_vpc_endpoint" "interface" {
+  for_each            = local.interface_endpoints
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.region}.${each.key}"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [for subnet in aws_subnet.private : subnet.id]
+  security_group_ids  = [aws_security_group.endpoints.id]
+  private_dns_enabled = true
+  tags                = { Name = "${local.name}-${each.key}" }
+}
+
+# A VPC's default group admits its own members; nothing should use it.
+resource "aws_default_security_group" "closed" {
+  vpc_id = aws_vpc.main.id
+}
+
+resource "aws_cloudwatch_log_group" "flow" {
+  name              = "/p1/${var.environment}/vpc-flow"
+  retention_in_days = 365
+  kms_key_id        = aws_kms_key.data["logs"].arn
+}
+
+resource "aws_flow_log" "vpc" {
+  vpc_id                   = aws_vpc.main.id
+  traffic_type             = "ALL"
+  log_destination_type     = "cloud-watch-logs"
+  log_destination          = aws_cloudwatch_log_group.flow.arn
+  iam_role_arn             = aws_iam_role.flow_logs.arn
+  max_aggregation_interval = 60
+}
+
+resource "aws_iam_role" "flow_logs" {
+  name = "${local.name}-flow-logs"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "vpc-flow-logs.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+      Condition = { StringEquals = { "aws:SourceAccount" = local.account } }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "flow_logs" {
+  name = "write-flow-logs"
+  role = aws_iam_role.flow_logs.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["logs:CreateLogStream", "logs:PutLogEvents", "logs:DescribeLogStreams"]
+      Resource = "${aws_cloudwatch_log_group.flow.arn}:*"
+    }]
+  })
 }

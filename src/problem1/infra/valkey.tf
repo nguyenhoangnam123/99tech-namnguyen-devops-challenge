@@ -3,21 +3,6 @@ resource "aws_elasticache_subnet_group" "limits" {
   subnet_ids = [for subnet in aws_subnet.isolated : subnet.id]
 }
 
-resource "random_password" "valkey" {
-  length  = 64
-  special = false
-}
-
-resource "aws_secretsmanager_secret" "valkey" {
-  name                    = "${local.name}/valkey-auth"
-  recovery_window_in_days = var.allow_destroy ? 0 : 30
-}
-
-resource "aws_secretsmanager_secret_version" "valkey" {
-  secret_id     = aws_secretsmanager_secret.valkey.id
-  secret_string = random_password.valkey.result
-}
-
 # Same eviction as wave 1's Redis: counters are disposable, so evict any key.
 resource "aws_elasticache_parameter_group" "limits" {
   name   = "${local.name}-limits"
@@ -26,6 +11,34 @@ resource "aws_elasticache_parameter_group" "limits" {
     name  = "maxmemory-policy"
     value = "allkeys-lru"
   }
+}
+
+# Every user group must contain a user named default; this one is off.
+resource "aws_elasticache_user" "default" {
+  user_id       = "${local.name}-default"
+  user_name     = "default"
+  engine        = "valkey"
+  access_string = "off -@all"
+  authentication_mode {
+    type = "no-password-required"
+  }
+}
+
+# oms-api signs in with its task role and may touch only rate limit keys.
+resource "aws_elasticache_user" "oms_api" {
+  user_id       = "${local.name}-oms-api"
+  user_name     = "${local.name}-oms-api"
+  engine        = "valkey"
+  access_string = "on ~rl:* -@all +@connection +@read +@write +@scripting +info"
+  authentication_mode {
+    type = "iam"
+  }
+}
+
+resource "aws_elasticache_user_group" "limits" {
+  user_group_id = "${local.name}-limits"
+  engine        = "valkey"
+  user_ids      = [aws_elasticache_user.default.user_id, aws_elasticache_user.oms_api.user_id]
 }
 
 # Rate limit counters only: losing them resets windows, so no snapshots.
@@ -42,8 +55,9 @@ resource "aws_elasticache_replication_group" "limits" {
   subnet_group_name          = aws_elasticache_subnet_group.limits.name
   security_group_ids         = [aws_security_group.store["valkey"].id]
   at_rest_encryption_enabled = true
+  kms_key_id                 = aws_kms_key.data["stream"].arn
   transit_encryption_enabled = true
-  auth_token                 = random_password.valkey.result
+  user_group_ids             = [aws_elasticache_user_group.limits.user_group_id]
   auto_minor_version_upgrade = true
   maintenance_window         = "sun:19:00-sun:20:00"
 }
