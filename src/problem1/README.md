@@ -72,17 +72,17 @@ make slo         # SLO catalog from empty state: p95/p99, CPU and memory per ser
 
 ## Tests
 
-| Suite             | Command                       | What it proves                                                                                                                                                  |
-| ----------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Unit and property | `make test`                   | Matching rules, fees, holds, settlement terms; fast-check proves the book never crosses, never overfills, never self-trades, and replays deterministically      |
-| Contract          | `make test`, `make check-gen` | Every spec compiles in the validator; responses that break the spec fail; generated code matches `contracts/`                                                   |
-| Integration       | `make test-integration`       | Use cases on real Postgres: redelivered batches settle once, concurrent orders cannot overdraw, unbalanced or edited journals are refused                       |
-| E2E transactions  | `make e2e`                    | Full flow through edge, outbox, Kafka, matcher and settlement; exactly-once deposits under 25 concurrent duplicates; ledger invariants checked after every file |
-| Chaos             | `make chaos`                  | Matcher restart rebuilds the book by replay; a settler SIGKILL mid-flow settles every trade exactly once                                                        |
-| Abuse (pen test)  | `make security`               | IDOR, double spend, idempotency races, JWT forgery, credential guessing, X-Forwarded-For spoofing, injection, oversized input; then an OWASP ZAP API scan       |
-| Load              | `make perf`                   | 500 rps open model; p99 < 100 ms per request                                                                                                                    |
-| SLO catalog       | `make slo`                    | Seven scenarios, each with load, window, size and a p95/p99 objective, reported with CPU and memory per service, pipeline lag and VM stall time                 |
-| AWS Terraform     | `make infra-check`            | Network and data tier on a mocked AWS provider: zones, routes, per-service access to each store, replication and TLS; tflint and Checkov                        |
+| Suite             | Command                                 | What it proves                                                                                                                                                                                              |
+| ----------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unit and property | `make test`                             | Matching rules, fees, holds, settlement terms; fast-check proves the book never crosses, never overfills, never self-trades, and replays deterministically                                                  |
+| Contract          | `make test`, `make check-gen`           | Every spec compiles in the validator; responses that break the spec fail; generated code matches `contracts/`                                                                                               |
+| Integration       | `make test-integration`                 | Use cases on real Postgres: redelivered batches settle once, concurrent orders cannot overdraw, unbalanced or edited journals are refused                                                                   |
+| E2E transactions  | `make e2e`                              | Full flow through edge, outbox, Kafka, matcher and settlement; exactly-once deposits under 25 concurrent duplicates; ledger invariants checked after every file                                             |
+| Chaos             | `make chaos`                            | Matcher restart rebuilds the book by replay; a settler SIGKILL mid-flow settles every trade exactly once                                                                                                    |
+| Abuse (pen test)  | `make security`                         | IDOR, double spend, idempotency races, JWT forgery, credential guessing, X-Forwarded-For spoofing, injection, oversized input; then an OWASP ZAP API scan                                                   |
+| Load              | `make perf`                             | 500 rps open model; p99 < 100 ms per request                                                                                                                                                                |
+| SLO catalog       | `make slo`                              | Seven scenarios, each with load, window, size and a p95/p99 objective, reported with CPU and memory per service, pipeline lag and VM stall time                                                             |
+| AWS Terraform     | `make infra-check`, `make infra-breaks` | Network and data tier on a mocked AWS provider: zones, routes, per-service access to each store, replication and TLS; tflint and Checkov. The breaks target proves each property fails its test when broken |
 
 Run order matters only once: the abuse suite spends the per-IP auth budget on purpose,
 and the helpers wait it out.

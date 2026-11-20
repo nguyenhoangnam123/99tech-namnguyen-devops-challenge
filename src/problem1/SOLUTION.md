@@ -208,7 +208,8 @@ The stack is never applied: it alone would cost about $1,300 a month. Instead,
 | tflint with the AWS ruleset, once per `.tfvars` file | The Valkey node type exists. The ruleset checks no other value here, so engine versions were checked against the region with the AWS CLI                                                                                                                                                                                                                                                                                        |
 | Checkov                                              | Problem 1's version failed 15 rules without exceptions. Problem 5 closes 12 and pinning zones by ID closes another. The last 2 are skipped on the 7 resources they concern, each with its reason                                                                                                                                                                                                                                |
 
-Every property was broken once on purpose, and the matching test failed.
+Every property is broken once on purpose by `make infra-breaks`, which CI also runs, and
+the matching test or Checkov rule must fail.
 
 Versions were checked against ap-southeast-1: Aurora PostgreSQL 17.11, MSK with Kafka 4.1
 in KRaft mode (wave 1 runs 4.1.2), and Valkey 8.2.
