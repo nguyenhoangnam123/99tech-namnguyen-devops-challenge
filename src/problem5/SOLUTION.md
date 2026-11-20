@@ -12,7 +12,7 @@ the fixes folded into the design. Each change is marked:
 | Network, data tier and per-service identity ([Terraform](../problem1/infra)) | Built and tested on a mocked AWS provider: 15 tests and 4 custom Checkov rules. 37 deliberate breaks, each caught (`make infra-breaks`). Checkov findings drop from 23 to 7, each skipped on its resource with a reason (section 6) |
 | Ledger roles ([sql/roles.sql](sql/roles.sql))                                | Built and tested against Problem 1's real migrations, applied by an Aurora-style master that is not a superuser. Of 9 ledger attacks, wave 1's role gets through 6 and the service roles none (section 6)                           |
 | Accounts, identity, edge, custody, detection                                 | Designed here; not built                                                                                                                                                                                                            |
-| Supply chain: OIDC, pinned actions, signed images, scans                     | Already done in [Problem 4](../problem4/SOLUTION.md) and the Problem 1 CI; not repeated                                                                                                                                             |
+| Supply chain: OIDC, pinned actions, image and dependency scans               | Already done in [Problem 4](../problem4/SOLUTION.md) and the Problem 1 CI; image signing is left out there, with the reason                                                                                                         |
 
 ## 1. The updated architecture
 

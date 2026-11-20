@@ -19,8 +19,7 @@ responses to disk. For each scenario, `run.sh`:
 4. recovers without restarting NGINX, while small GETs keep arriving at about 15 a second;
 5. checks that the cause is gone and that every probe succeeds.
 
-`parsing` instead checks the report against configs that broke the first version of the
-script, which failed four of its six checks:
+`parsing` instead checks the report against configs that are easy to misparse:
 
 - statements split across lines, or sharing one;
 - a quoted include;
@@ -145,17 +144,15 @@ PASS
 | cache-limit            | `max_size=63m` on a 64 MiB volume                                                                            | Sits flat at 98% once full, the "consistently at 99%" shape. 4 of 5 new downloads truncated                                                                              | Lower `max_size` to 44m and reload: 98% to 69%; 69 of 69 OK                                         |
 | lvm-free               | A 100 MiB logical volume in a 400 MiB volume group, as Ubuntu's installer leaves root at about half the disk | Logs only on this volume, so only new log lines are lost                                                                                                                 | `lvextend -r -L +200M`, online: 100% to 34%; 53 of 53 OK                                            |
 
-Other checks:
+Manual checks, outside `run.sh`:
 
-- **The error log stays silent on a full `/`.** In a separate run of the deleted-open case,
+- **The error log stays silent on a full `/`.** In the deleted-open case,
   `/var/log/nginx/error.log` grew 0 bytes while the probes failed. An alert on
   `No space left on device` only works if the error log lives elsewhere.
-- **Messages when the error log can be written** (inode and cache cases, from earlier
-  manual runs with the same configs):
+- **Messages when the error log can be written** (inode and cache cases):
   - inodes: `mkdir() "/var/cache/nginx/api/3/87" failed (28: No space left on device) while reading upstream`;
   - a byte-full cache: `pwritev() "...0000000199" has written only 16384 of 36864 while reading upstream`.
-- **URLs cached before the inodes ran out kept working:** 100 of 100 returned 200 in a
-  manual run.
+- **URLs cached before the inodes ran out kept working:** 100 of 100 returned 200.
 - **tmpfs has no ext4 root reserve,** so `df` reaches 100% exactly as root writes. The
   `lvm-free` volume is ext4: there, the fill ran as root and used the 5 MiB reserve too.
 

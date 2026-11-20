@@ -10,7 +10,7 @@ My approach:
 
 The triage is scripted, read-only and tested. [scripts/triage.sh](scripts/triage.sh) checks
 every cause below. A [lab](lab/RESULTS.md) reproduces six of them, plus a config parsing
-check, and runs in CI. For each case it records:
+check. CI runs all but the LVM case, which needs a privileged container. For each case it records:
 
 - what clients saw while the disk was full: small requests, 64 KiB uploads and 1 MiB
   downloads to a slow client;

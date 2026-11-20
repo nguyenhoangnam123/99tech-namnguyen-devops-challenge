@@ -4,8 +4,9 @@ Two GitHub Actions pipelines: a backend API to EC2 and a single-page app to S3. 
 once on `main`, deploy to staging, and reach production only after a reviewer approves.
 GitHub signs in to AWS with OpenID Connect, so no AWS key is stored anywhere.
 
-Everything here runs for real: the Terraform was applied to an AWS account, and the deploys
-and rollbacks in [Evidence](#evidence) were measured there.
+Everything here ran for real: the Terraform was applied to an AWS account, and the deploys
+and rollbacks in [Evidence](#evidence) were measured there. The AWS resources and the GitHub
+AWS variables were then removed; [Running it](#running-it) recreates them.
 
 | Piece | Where |
 |---|---|
@@ -19,7 +20,7 @@ and rollbacks in [Evidence](#evidence) were measured there.
 
 | Property | How the pipelines provide it |
 |---|---|
-| No stored cloud credentials | GitHub OIDC tokens exchanged for 1-hour AWS sessions. Each role trusts one branch or one environment. |
+| No stored cloud credentials | GitHub OIDC tokens exchanged for 1-hour AWS sessions. The build role trusts `main`, each deploy role one environment, and the read-only plan role pull requests and `main`. |
 | Production needs a human | The `production` GitHub environment requires a reviewer, and the production deploy role trusts only jobs in that environment. |
 | What was tested is what ships | The image is tagged with its commit in an immutable ECR repository; the frontend bundle is stored per commit. Staging and production deploy the same bytes. |
 | No downtime | The backend launches new instances before it stops old ones. The frontend uploads hashed assets first and switches `index.html` last. |
@@ -100,7 +101,7 @@ Any failure leaves the previous version serving, and the job fails.
 2. `index.html` last, with `no-cache`. This is the switch to the new release.
 3. A CloudFront invalidation of `/` and `/index.html`, then the smoke test.
 
-### Identity: three roles, each with one caller
+### Identity: four roles, each with its own callers
 
 | Role | Who can assume it (OIDC `sub`) | What it can do |
 |---|---|---|
@@ -145,7 +146,8 @@ plan JSON:
 - Shared: immutable ECR tags with scanning, versioned artifacts, the GitHub OIDC provider.
 - An unknown environment name is rejected.
 
-CI runs them on pull requests and `main` with the read-only `p4-github-plan` role. They never
+CI runs them on pull requests and `main` with the read-only `p4-github-plan` role, and skips
+them while the `AWS_PLAN_ROLE_ARN` variable is unset. They never
 read the state bucket, which holds the CloudFront origin secret.
 
 **Terratest end-to-end test** ([e2e_test.go](infra/test/e2e_test.go)) applies a throwaway

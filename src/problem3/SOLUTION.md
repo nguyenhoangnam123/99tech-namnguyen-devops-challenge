@@ -2,7 +2,8 @@
 
 Eight faults left the API either unreachable or one dependency hiccup away from an outage.
 After the fixes, errors last only as long as the disruption does (under 30 requests for a
-restart), no request waits more than about 6 s, and the stack recovers on its own.
+restart), no request waited more than about 6 s in the tests (the bound is 8 s), and the
+stack recovers on its own.
 
 ## Before and after
 
