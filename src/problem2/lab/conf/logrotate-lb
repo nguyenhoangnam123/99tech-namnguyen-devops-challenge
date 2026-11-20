@@ -1,0 +1,13 @@
+/var/log/lb/*.log {
+    hourly
+    maxsize 100M
+    rotate 4
+    missingok
+    notifempty
+    compress
+    delaycompress
+    sharedscripts
+    postrotate
+        nginx -s reopen
+    endscript
+}
