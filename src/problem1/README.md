@@ -82,6 +82,7 @@ make slo         # SLO catalog from empty state: p95/p99, CPU and memory per ser
 | Abuse (pen test)  | `make security`               | IDOR, double spend, idempotency races, JWT forgery, credential guessing, X-Forwarded-For spoofing, injection, oversized input; then an OWASP ZAP API scan       |
 | Load              | `make perf`                   | 500 rps open model; p99 < 100 ms per request                                                                                                                    |
 | SLO catalog       | `make slo`                    | Seven scenarios, each with load, window, size and a p95/p99 objective, reported with CPU and memory per service, pipeline lag and VM stall time                 |
+| AWS Terraform     | `make infra-check`            | Network and data tier on a mocked AWS provider: zones, routes, per-service access to each store, replication and TLS; tflint and Checkov                        |
 
 Run order matters only once: the abuse suite spends the per-IP auth budget on purpose,
 and the helpers wait it out.

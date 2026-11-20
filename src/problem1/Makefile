@@ -4,7 +4,7 @@ SHELL := bash
 
 COMPOSE := docker compose --env-file deploy/.env -f deploy/docker-compose.yml
 
-.PHONY: help secrets up up-obs down nuke ps logs build lint typecheck test test-integration e2e chaos security perf slo gen check-gen dashboards ab aws-diagrams
+.PHONY: help secrets up up-obs down nuke ps logs build lint typecheck test test-integration e2e chaos security perf slo gen check-gen dashboards ab aws-diagrams infra-check
 
 help: ## List targets
 	@grep -E '^[a-z0-9-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-18s %s\n", $$1, $$2}'
@@ -102,3 +102,15 @@ aws-diagrams: ## Render the AWS diagrams in docs/aws/img (Docker only)
 	docker build -q -t $(DIAGRAMS_IMAGE) docs/aws/diagrams >/dev/null
 	docker run --rm -v "$$PWD/docs/aws:/work" -w /work/diagrams $(DIAGRAMS_IMAGE) \
 	  sh -c 'python assessment.py && python production.py'
+
+TFLINT_IMAGE := ghcr.io/terraform-linters/tflint:v0.59.1
+CHECKOV_IMAGE := bridgecrew/checkov:3.4.5
+
+infra-check: ## Terraform for AWS: fmt, validate, tests on a mocked provider, tflint, checkov
+	terraform -chdir=infra fmt -check -recursive
+	terraform -chdir=infra init -backend=false -input=false >/dev/null
+	terraform -chdir=infra validate
+	terraform -chdir=infra test
+	docker run --rm -v "$$PWD/infra:/data" -w /data --entrypoint sh $(TFLINT_IMAGE) \
+	  -c 'tflint --init >/dev/null && for f in *.tfvars; do tflint --var-file="$$f" || exit 1; done'
+	docker run --rm -v "$$PWD/infra:/infra" $(CHECKOV_IMAGE) --config-file /infra/.checkov.yaml -d /infra

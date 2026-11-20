@@ -1,0 +1,25 @@
+framework: [terraform]
+compact: true
+quiet: true
+skip-check:
+  # Accepted. deletion_protection is on unless allow_destroy, which only
+  # throwaway environments set; Checkov cannot evaluate the expression.
+  - CKV_AWS_139
+  # Workload groups are attached by the ECS stack, not this one.
+  - CKV2_AWS_5
+  # Zones are sorted and sliced to zone_count, so a new zone changes nothing.
+  - CKV_AWS_394
+  # Problem 5 closes these: customer managed keys, flow logs, a closed
+  # default group, IAM database auth, audit logging and AWS Backup.
+  - CKV_AWS_149
+  - CKV_AWS_158
+  - CKV_AWS_162
+  - CKV_AWS_191
+  - CKV_AWS_327
+  - CKV_AWS_338
+  - CKV_AWS_354
+  - CKV2_AWS_8
+  - CKV2_AWS_11
+  - CKV2_AWS_12
+  - CKV2_AWS_27
+  - CKV2_AWS_57
