@@ -1,0 +1,26 @@
+name: p5-security
+
+on:
+  pull_request:
+    paths: ['src/problem5/**', 'src/problem1/contracts/db/migrations/**', '.github/workflows/p5-security.yml']
+  push:
+    branches: [main]
+    paths: ['src/problem5/**', 'src/problem1/contracts/db/migrations/**', '.github/workflows/p5-security.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p5-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  roles:
+    name: Ledger attacks against the restricted roles
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: make -C src/problem5 test-roles
