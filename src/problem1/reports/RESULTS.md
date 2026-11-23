@@ -104,9 +104,9 @@ scalability: `IS NOT DISTINCT FROM` made every ledger post scan the whole accoun
 EXPLAIN shows 0.51 ms falling to 0.14 ms at about 1,100 accounts, and the scan grows
 linearly with users while the index lookup does not.
 
-## Independent QA review
+## Code review
 
-A read-only reviewer was briefed with the intended behaviour, not with conclusions.
+The code was reviewed against its intended behaviour, in two rounds.
 
 | Round | Blockers | Major | Outcome |
 |---|---:|---:|---|

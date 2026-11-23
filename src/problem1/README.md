@@ -93,7 +93,7 @@ Every change went through the same gates:
 
 1. Evidence before the fix (for example `reports/security/before-xff-fix.txt`).
 2. A test that fails without the change. Key ones were mutation-checked.
-3. An independent read-only QA review against intended behaviour, re-run until no blockers.
+3. A review of the diff against the intended behaviour, repeated until no blockers remain.
 4. A/B on the same k6 scenario, fresh stack per side: `make ab A=<sha> B=<sha>`.
 5. Full stack verification before the commit.
 

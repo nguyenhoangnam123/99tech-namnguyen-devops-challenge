@@ -170,7 +170,7 @@ flowchart LR
   e2e --> chaos[make chaos]
   chaos --> sec[make security<br/>abuse + ZAP]
   sec --> perf[make slo / make ab<br/>numbers, not opinions]
-  perf --> review[Independent review<br/>read-only, against intent]
+  perf --> review[Review the diff<br/>against intent]
   review -->|findings| edit
   review -->|no blockers| commit[Commit]
   commit --> ci[CI: static, unit,<br/>stack job]
